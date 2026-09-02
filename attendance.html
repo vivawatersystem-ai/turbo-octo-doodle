@@ -1,285 +1,114 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>تسجيل الحضور والانصراف - فيفا ووتر سيستم</title>
-<style>
-  :root {
-    --ink: #16261f;
-    --paper: #f6f5f0;
-    --card: #ffffff;
-    --line: #dedad0;
-    --teal: #1f6f5c;
-    --teal-dark: #14503f;
-    --amber: #c2782e;
-    --danger: #a4372c;
-    --muted: #6b7268;
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: "Segoe UI", Tahoma, "Helvetica Neue", Arial, sans-serif;
-    min-height: 100vh;
-  }
-  .wrap {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 28px 20px 48px;
-    min-height: 100vh;
-  }
-  .brand {
-    text-align: center;
-    margin-bottom: 22px;
-  }
-  .brand .drop {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 10px;
-    border-radius: 60% 60% 60% 0;
-    background: var(--teal);
-    transform: rotate(45deg);
-  }
-  .brand h1 {
-    font-size: 19px;
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-  }
-  .brand p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .clock {
-    text-align: center;
-    font-size: 15px;
-    color: var(--muted);
-    margin-bottom: 22px;
-    font-variant-numeric: tabular-nums;
-  }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 22px 20px;
-  }
-  label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--ink);
-  }
-  select, input[type=text] {
-    width: 100%;
-    padding: 13px 14px;
-    font-size: 16px;
-    border: 1.5px solid var(--line);
-    border-radius: 9px;
-    background: #fff;
-    color: var(--ink);
-    margin-bottom: 18px;
-    font-family: inherit;
-  }
-  select:focus, input:focus {
-    outline: none;
-    border-color: var(--teal);
-  }
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 4px;
-  }
-  button {
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 700;
-    padding: 16px 10px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.08s ease, opacity 0.15s ease;
-  }
-  button:active {
-    transform: scale(0.97);
-  }
-  button:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-  #btnIn {
-    background: var(--teal);
-    color: #fff;
-  }
-  #btnOut {
-    background: var(--ink);
-    color: #fff;
-  }
-  .status {
-    margin-top: 18px;
-    padding: 14px 15px;
-    border-radius: 10px;
-    font-size: 14.5px;
-    line-height: 1.6;
-    display: none;
-  }
-  .status.show { display: block; }
-  .status.ok { background: #e8f3ee; color: var(--teal-dark); border: 1px solid #bfe0d3; }
-  .status.warn { background: #fbf1e4; color: var(--amber); border: 1px solid #f0d7ac; }
-  .status.err { background: #fbeae7; color: var(--danger); border: 1px solid #f0c4bc; }
-  .status.loading { background: #eef0ec; color: var(--muted); border: 1px solid var(--line); }
-  .hint {
-    text-align: center;
-    font-size: 12.5px;
-    color: var(--muted);
-    margin-top: 16px;
-    line-height: 1.6;
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="brand">
-    <div class="drop"></div>
-    <h1>فيفا ووتر سيستم</h1>
-    <p>تسجيل الحضور والانصراف</p>
-  </div>
+// ==== الإعدادات ====
+var COMPANY_LAT = 29.991159;
+var COMPANY_LNG = 31.152182;
+var MAX_DISTANCE_METERS = 150; // نطاق مسموح حوالين الشركة (متر)
+var DEVICES_SHEET_NAME = "الأجهزة المسجلة";
 
-  <div class="clock" id="clock">—</div>
+var EMPLOYEES = {
+  "EMP01": "يوسف حمدي",
+  "EMP02": "عمرو محمد",
+  "EMP03": "محمد الطباخ",
+  "EMP04": "خالد الطباخ",
+  "EMP05": "سندس",
+  "EMP06": "رودينا",
+  "EMP07": "فاطمة",
+  "EMP08": "جنة",
+  "EMP09": "احمد سلام",
+  "EMP10": "حسام كمال",
+  "EMP11": "عبدالسلام",
+  "EMP12": "احمد مجدي"
+};
 
-  <div class="card">
-    <label for="empSelect">اختر اسمك</label>
-    <select id="empSelect">
-      <option value="">-- اختر الموظف --</option>
-      <option value="EMP01">يوسف حمدي</option>
-      <option value="EMP02">عمرو محمد</option>
-      <option value="EMP03">محمد الطباخ</option>
-      <option value="EMP04">خالد الطباخ</option>
-      <option value="EMP05">سندس</option>
-      <option value="EMP06">رودينا</option>
-      <option value="EMP07">فاطمة</option>
-      <option value="EMP08">جنة</option>
-      <option value="EMP09">احمد سلام</option>
-      <option value="EMP10">حسام كمال</option>
-      <option value="EMP11">عبدالسلام</option>
-      <option value="EMP12">احمد مجدي</option>
-    </select>
+function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheets()[0]; // شيت الحضور الأساسي (أول شيت)
+  var data = JSON.parse(e.postData.contents);
 
-    <label for="empCode">كود الموظف</label>
-    <input type="text" id="empCode" inputmode="numeric" placeholder="مثال: EMP01" autocomplete="off">
+  var code = data.code;
+  var type = data.type; // "حضور" او "انصراف"
+  var lat = parseFloat(data.lat);
+  var lng = parseFloat(data.lng);
+  var deviceId = data.deviceId || "";
 
-    <div class="btn-row">
-      <button id="btnIn">تسجيل حضور</button>
-      <button id="btnOut">تسجيل انصراف</button>
-    </div>
-
-    <div class="status" id="status"></div>
-  </div>
-
-  <p class="hint">لازم تكون داخل مقر الشركة وواصل بالإنترنت عشان يتم تأكيد الموقع تلقائياً.</p>
-</div>
-
-<script>
-  // ==== إعدادات ====
-  var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1xomkFQohHoZF9StQXoMpxZB5JORxAYqpw3lWH2HY5w6KjfgbVnh7-wMh1GkwnGJWdw/exec";
-
-  var clockEl = document.getElementById('clock');
-  var selectEl = document.getElementById('empSelect');
-  var codeEl = document.getElementById('empCode');
-  var statusEl = document.getElementById('status');
-  var btnIn = document.getElementById('btnIn');
-  var btnOut = document.getElementById('btnOut');
-
-  function tick() {
-    var now = new Date();
-    var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    clockEl.textContent = now.toLocaleString('ar-EG', opts);
-  }
-  tick();
-  setInterval(tick, 1000);
-
-  // اختيار الموظف من القائمة يملأ الكود تلقائياً
-  selectEl.addEventListener('change', function () {
-    codeEl.value = selectEl.value;
-  });
-
-  function setStatus(type, message) {
-    statusEl.className = 'status show ' + type;
-    statusEl.textContent = message;
+  // تحقق من الكود
+  if (!EMPLOYEES[code]) {
+    return jsonResponse("error", "كود الموظف غير صحيح");
   }
 
-  function clearStatus() {
-    statusEl.className = 'status';
-    statusEl.textContent = '';
+  var name = EMPLOYEES[code];
+
+  // ==== تحقق من ربط الجهاز ====
+  var devicesSheet = getOrCreateDevicesSheet(ss);
+  var deviceCheck = checkDevice(devicesSheet, code, name, deviceId);
+
+  if (!deviceCheck.allowed) {
+    return jsonResponse("error", deviceCheck.message);
   }
 
-  function setButtonsDisabled(disabled) {
-    btnIn.disabled = disabled;
-    btnOut.disabled = disabled;
+  // حساب المسافة من الشركة
+  var distance = getDistanceMeters(lat, lng, COMPANY_LAT, COMPANY_LNG);
+  var insideRange = distance <= MAX_DISTANCE_METERS;
+
+  var now = new Date();
+  var dateStr = Utilities.formatDate(now, "GMT+2", "yyyy-MM-dd");
+  var timeStr = Utilities.formatDate(now, "GMT+2", "HH:mm:ss");
+
+  sheet.appendRow([
+    now, name, code, type, dateStr, timeStr, lat, lng, insideRange ? "نعم" : "لا"
+  ]);
+
+  if (!insideRange) {
+    return jsonResponse("warning", "تم التسجيل، لكنك خارج نطاق الشركة (" + Math.round(distance) + " متر)");
   }
 
-  function submitAttendance(type) {
-    var code = codeEl.value.trim().toUpperCase();
+  return jsonResponse("success", "تم تسجيل " + type + " بنجاح لـ " + name);
+}
 
-    if (!code) {
-      setStatus('err', 'من فضلك اختر اسمك أو اكتب كودك أولاً.');
-      return;
+function checkDevice(devicesSheet, code, name, deviceId) {
+  if (!deviceId) {
+    return { allowed: false, message: "تعذر التعرف على جهازك، جرب تفتح الصفحة من جديد." };
+  }
+
+  var values = devicesSheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (values[i][0] === code) {
+      var savedDeviceId = values[i][2];
+      if (savedDeviceId === deviceId) {
+        return { allowed: true }; // نفس الجهاز المسجل
+      } else {
+        return { allowed: false, message: "هذا الكود مسجل بالفعل على جهاز آخر. تواصل مع الإدارة لو ده جهازك الجديد." };
+      }
     }
-
-    if (!navigator.geolocation) {
-      setStatus('err', 'المتصفح ده مش بيدعم تحديد الموقع. جرب متصفح تاني.');
-      return;
-    }
-
-    setButtonsDisabled(true);
-    setStatus('loading', 'جاري تحديد موقعك...');
-
-    navigator.geolocation.getCurrentPosition(
-      function (pos) {
-        var lat = pos.coords.latitude;
-        var lng = pos.coords.longitude;
-        sendToSheet(code, type, lat, lng);
-      },
-      function (err) {
-        setButtonsDisabled(false);
-        setStatus('err', 'محتاجين إذن الوصول للموقع عشان نسجل حضورك. من فضلك فعّل خدمة الموقع وحاول تاني.');
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
   }
 
-  function sendToSheet(code, type, lat, lng) {
-    setStatus('loading', 'جاري إرسال التسجيل...');
+  // مفيش تسجيل قبل كده لهذا الكود -> سجّل الجهاز ده كأول جهاز
+  devicesSheet.appendRow([code, name, deviceId, new Date()]);
+  return { allowed: true };
+}
 
-    fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ code: code, type: type, lat: lat, lng: lng })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        setButtonsDisabled(false);
-        if (data.status === 'success') {
-          setStatus('ok', data.message);
-        } else if (data.status === 'warning') {
-          setStatus('warn', data.message);
-        } else {
-          setStatus('err', data.message || 'حصل خطأ، حاول تاني.');
-        }
-      })
-      .catch(function (e) {
-        setButtonsDisabled(false);
-        setStatus('err', 'تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت وحاول تاني.');
-      });
+function getOrCreateDevicesSheet(ss) {
+  var sheet = ss.getSheetByName(DEVICES_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(DEVICES_SHEET_NAME);
+    sheet.appendRow(["كود الموظف", "اسم الموظف", "معرف الجهاز", "تاريخ أول تسجيل"]);
   }
+  return sheet;
+}
 
-  btnIn.addEventListener('click', function () { submitAttendance('حضور'); });
-  btnOut.addEventListener('click', function () { submitAttendance('انصراف'); });
-</script>
-</body>
-</html>
+function jsonResponse(status, message) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: status,
+    message: message
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getDistanceMeters(lat1, lng1, lat2, lng2) {
+  var R = 6371000;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
