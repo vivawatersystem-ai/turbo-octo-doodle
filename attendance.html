@@ -208,6 +208,34 @@
     codeEl.value = selectEl.value;
   });
 
+  // ==== معرف الجهاز (يتخزن مرة واحدة في المتصفح) ====
+  function getDeviceId() {
+    var key = 'attendance_device_id';
+    var id = '';
+    try {
+      id = localStorage.getItem(key) || '';
+    } catch (e) {
+      id = '';
+    }
+    if (!id) {
+      try {
+        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : '';
+      } catch (e) {
+        id = '';
+      }
+      if (!id) {
+        id = 'dev-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '-' + Math.random().toString(36).slice(2);
+      }
+      try {
+        localStorage.setItem(key, id);
+      } catch (e) {
+        // لو التخزين فشل، هنستخدم نفس المعرف طول ما الصفحة مفتوحة بس
+      }
+    }
+    return id;
+  }
+  var deviceId = getDeviceId();
+
   function setStatus(type, message) {
     statusEl.className = 'status show ' + type;
     statusEl.textContent = message;
@@ -254,12 +282,15 @@
   }
 
   function sendToSheet(code, type, lat, lng) {
+    if (!deviceId) {
+      deviceId = getDeviceId();
+    }
     setStatus('loading', 'جاري إرسال التسجيل...');
 
     fetch(WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ code: code, type: type, lat: lat, lng: lng })
+      body: JSON.stringify({ code: code, type: type, lat: lat, lng: lng, deviceId: deviceId })
     })
       .then(function (res) { return res.json(); })
       .then(function (data) {
