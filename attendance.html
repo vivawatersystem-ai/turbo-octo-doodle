@@ -2,7 +2,6 @@
 var COMPANY_LAT = 29.991159;
 var COMPANY_LNG = 31.152182;
 var MAX_DISTANCE_METERS = 150; // نطاق مسموح حوالين الشركة (متر)
-var DEVICES_SHEET_NAME = "الأجهزة المسجلة";
 
 var EMPLOYEES = {
   "EMP01": "يوسف حمدي",
@@ -20,30 +19,23 @@ var EMPLOYEES = {
 };
 
 function doPost(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheets()[0]; // شيت الحضور الأساسي (أول شيت)
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var data = JSON.parse(e.postData.contents);
 
   var code = data.code;
   var type = data.type; // "حضور" او "انصراف"
   var lat = parseFloat(data.lat);
   var lng = parseFloat(data.lng);
-  var deviceId = data.deviceId || "";
 
   // تحقق من الكود
   if (!EMPLOYEES[code]) {
-    return jsonResponse("error", "كود الموظف غير صحيح");
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: "كود الموظف غير صحيح"
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 
   var name = EMPLOYEES[code];
-
-  // ==== تحقق من ربط الجهاز ====
-  var devicesSheet = getOrCreateDevicesSheet(ss);
-  var deviceCheck = checkDevice(devicesSheet, code, name, deviceId);
-
-  if (!deviceCheck.allowed) {
-    return jsonResponse("error", deviceCheck.message);
-  }
 
   // حساب المسافة من الشركة
   var distance = getDistanceMeters(lat, lng, COMPANY_LAT, COMPANY_LNG);
@@ -58,47 +50,15 @@ function doPost(e) {
   ]);
 
   if (!insideRange) {
-    return jsonResponse("warning", "تم التسجيل، لكنك خارج نطاق الشركة (" + Math.round(distance) + " متر)");
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "warning",
+      message: "تم التسجيل، لكنك خارج نطاق الشركة (" + Math.round(distance) + " متر)"
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  return jsonResponse("success", "تم تسجيل " + type + " بنجاح لـ " + name);
-}
-
-function checkDevice(devicesSheet, code, name, deviceId) {
-  if (!deviceId) {
-    return { allowed: false, message: "تعذر التعرف على جهازك، جرب تفتح الصفحة من جديد." };
-  }
-
-  var values = devicesSheet.getDataRange().getValues();
-  for (var i = 1; i < values.length; i++) {
-    if (values[i][0] === code) {
-      var savedDeviceId = values[i][2];
-      if (savedDeviceId === deviceId) {
-        return { allowed: true }; // نفس الجهاز المسجل
-      } else {
-        return { allowed: false, message: "هذا الكود مسجل بالفعل على جهاز آخر. تواصل مع الإدارة لو ده جهازك الجديد." };
-      }
-    }
-  }
-
-  // مفيش تسجيل قبل كده لهذا الكود -> سجّل الجهاز ده كأول جهاز
-  devicesSheet.appendRow([code, name, deviceId, new Date()]);
-  return { allowed: true };
-}
-
-function getOrCreateDevicesSheet(ss) {
-  var sheet = ss.getSheetByName(DEVICES_SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(DEVICES_SHEET_NAME);
-    sheet.appendRow(["كود الموظف", "اسم الموظف", "معرف الجهاز", "تاريخ أول تسجيل"]);
-  }
-  return sheet;
-}
-
-function jsonResponse(status, message) {
   return ContentService.createTextOutput(JSON.stringify({
-    status: status,
-    message: message
+    status: "success",
+    message: "تم تسجيل " + type + " بنجاح لـ " + name
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
