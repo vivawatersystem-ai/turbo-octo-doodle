@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منتجاتنا — Vivawatersystem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep: #0B3D45;
+    --teal: #12707A;
+    --aqua: #29B6C9;
+    --mist: #F3F8F8;
+    --ink: #16292B;
+    --line: #DCEAEA;
+    --white: #FFFFFF;
+    --whatsapp: #1FA855;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Cairo', sans-serif;
+    background:var(--mist);
+    color:var(--ink);
+  }
+
+  header{
+    background:linear-gradient(180deg, var(--deep), var(--teal));
+    color:var(--white);
+    padding:36px 20px 46px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 6px;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    font-size:14.5px;
+    color:#D7ECEE;
+    font-weight:400;
+  }
+
+  .toolbar{
+    max-width:1000px;
+    margin:-24px auto 0;
+    padding:0 16px;
+    position:relative;
+    z-index:2;
+  }
+  .toolbar-inner{
+    background:var(--white);
+    border-radius:14px;
+    box-shadow:0 8px 24px rgba(11,61,69,0.12);
+    padding:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .toolbar input[type="text"]{
+    flex:1 1 200px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:11px 14px;
+    font-family:inherit;
+    font-size:14.5px;
+    background:var(--mist);
+    color:var(--ink);
+  }
+  .toolbar select{
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:11px 14px;
+    font-family:inherit;
+    font-size:14.5px;
+    background:var(--mist);
+    color:var(--ink);
+  }
+  .toolbar input:focus, .toolbar select:focus{
+    outline:2px solid var(--aqua);
+    outline-offset:1px;
+  }
+
+  main{
+    max-width:1000px;
+    margin:26px auto 60px;
+    padding:0 16px;
+  }
+
+  #state-msg{
+    text-align:center;
+    color:#5C7378;
+    padding:40px 10px;
+    font-size:14.5px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    gap:18px;
+  }
+
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .card-img{
+    width:100%;
+    aspect-ratio:4/3;
+    background:#E7F2F2 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="%2312707A" stroke-width="1.4"><path d="M12 2v6M6 8l3 3M18 8l-3 3"/></svg>') center/34px no-repeat;
+    background-size:cover;
+    background-position:center;
+    position:relative;
+  }
+  .badge-out{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:rgba(22,41,43,0.85);
+    color:#fff;
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+  .card-body{
+    padding:14px 14px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+  }
+  .cat{
+    font-size:12px;
+    color:var(--teal);
+    font-weight:600;
+  }
+  .card h3{
+    margin:0;
+    font-size:16.5px;
+    font-weight:700;
+    color:var(--deep);
+  }
+  .desc{
+    font-size:13.5px;
+    color:#546869;
+    line-height:1.55;
+    margin:0;
+    flex:1;
+  }
+  .price{
+    font-size:15.5px;
+    font-weight:800;
+    color:var(--deep);
+    margin-top:2px;
+  }
+  .wa-btn{
+    margin-top:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:var(--whatsapp);
+    color:#fff;
+    text-decoration:none;
+    padding:10px 12px;
+    border-radius:9px;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:700;
+  }
+  .wa-btn.disabled{
+    background:#B7C2C2;
+    pointer-events:none;
+  }
+
+  footer{
+    text-align:center;
+    color:#7C9091;
+    font-size:12.5px;
+    padding:20px 0 34px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>منتجاتنا</h1>
+  <p>Vivawatersystem — أنظمة تنقية وفلترة المياه</p>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <input type="text" id="search" placeholder="ابحث باسم المنتج...">
+    <select id="category-filter">
+      <option value="">كل الفئات</option>
+    </select>
+  </div>
+</div>
+
+<main>
+  <div id="state-msg">جاري تحميل المنتجات...</div>
+  <div class="grid" id="grid" style="display:none;"></div>
+</main>
+
+<footer>لو محتاج مساعدة في اختيار المنتج المناسب، تواصل معانا على واتساب</footer>
+
+<script>
+  // بعد ما تنشر Apps Script كـ Web App، حط رابطه هنا مكان الرابط ده
+  const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  const WHATSAPP_NUMBER = "201034235594";
+
+  let allProducts = [];
+
+  async function loadProducts(){
+    const stateMsg = document.getElementById('state-msg');
+    const grid = document.getElementById('grid');
+    try{
+      const res = await fetch(SCRIPT_URL);
+      const data = await res.json();
+      if(data.error){
+        stateMsg.textContent = "خطأ: " + data.error;
+        return;
+      }
+      allProducts = data;
+      populateCategories(data);
+      renderProducts(data);
+      stateMsg.style.display = 'none';
+      grid.style.display = 'grid';
+    }catch(err){
+      stateMsg.textContent = "تعذر تحميل المنتجات حالياً، حاول تاني بعد شوية";
+    }
+  }
+
+  function populateCategories(products){
+    const select = document.getElementById('category-filter');
+    const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
+    cats.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      select.appendChild(opt);
+    });
+  }
+
+  function waLink(productName){
+    const msg = `مرحباً، عايز أستفسر عن: ${productName}`;
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  }
+
+  function renderProducts(products){
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    if(products.length === 0){
+      grid.innerHTML = '<div id="state-msg" style="display:block;">مفيش منتجات مطابقة للبحث</div>';
+      return;
+    }
+    products.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const priceText = p.price ? `${p.price} جنيه` : '';
+
+      card.innerHTML = `
+        <div class="card-img" style="${p.image ? `background-image:url('${p.image}')` : ''}">
+          ${!p.available ? '<span class="badge-out">غير متوفر حالياً</span>' : ''}
+        </div>
+        <div class="card-body">
+          <span class="cat">${p.category || ''}</span>
+          <h3>${p.name}</h3>
+          <p class="desc">${p.description || ''}</p>
+          ${priceText ? `<div class="price">${priceText}</div>` : ''}
+          <a class="wa-btn ${p.available ? '' : 'disabled'}" href="${waLink(p.name)}" target="_blank" rel="noopener">
+            استفسار عبر واتساب
+          </a>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function applyFilters(){
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const cat = document.getElementById('category-filter').value;
+    const filtered = allProducts.filter(p => {
+      const matchesQ = !q || p.name.toLowerCase().includes(q);
+      const matchesCat = !cat || p.category === cat;
+      return matchesQ && matchesCat;
+    });
+    renderProducts(filtered);
+  }
+
+  document.getElementById('search').addEventListener('input', applyFilters);
+  document.getElementById('category-filter').addEventListener('change', applyFilters);
+
+  loadProducts();
+</script>
+
+</body>
+</html>
