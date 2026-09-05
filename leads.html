@@ -95,18 +95,32 @@
   <select id="newEmployee"></select>
   <label>ملاحظات (اختياري)</label>
   <textarea id="newNotes" rows="2"></textarea>
+  <label>الأولوية</label>
+  <select id="newPriority">
+    <option value="عادي">عادي</option>
+    <option value="مستعجل">مستعجل</option>
+  </select>
   <button onclick="submitLead()">إضافة الرقم</button>
   <div id="addMsg"></div>
 </div>
 
 <div class="card hidden" id="listCard">
   <h2 id="listTitle">الأرقام</h2>
+  <div id="adminToolsRow" class="hidden" style="display:flex; gap:8px; margin-bottom:12px;">
+    <button class="secondary" style="margin-top:0" onclick="toggleReport()">📊 تقرير الأداء</button>
+    <button class="secondary" style="margin-top:0" onclick="archiveNow()">🗄 أرشفة القديم</button>
+  </div>
   <div id="kpiBar" class="kpi-bar"></div>
   <div class="filters-row">
     <input type="text" id="searchInput" placeholder="بحث برقم أو اسم..." oninput="applyFilters()" style="flex:2">
     <select id="statusFilter" onchange="applyFilters()" style="flex:1"></select>
   </div>
   <div id="leadsList"></div>
+</div>
+
+<div class="card hidden" id="reportCard">
+  <h2>تقرير الأداء</h2>
+  <div id="reportContent"></div>
 </div>
 
 <script>
@@ -181,6 +195,7 @@ function login() {
         currentRole === 'admin' ? 'كل الأرقام' : `أرقام ${data.name}`;
       if (currentRole === 'admin') {
         document.getElementById('adminCard').classList.remove('hidden');
+        document.getElementById('adminToolsRow').classList.remove('hidden');
       }
       loadLeads();
     })
@@ -203,6 +218,7 @@ function submitLead(force) {
     department: document.getElementById('newDept').value,
     employeeOverride: document.getElementById('newEmployee').value,
     notes: document.getElementById('newNotes').value.trim(),
+    priority: document.getElementById('newPriority').value,
     confirmDuplicate: !!force
   };
   if (!payload.phone) {
@@ -279,16 +295,97 @@ function applyFilters() {
 }
 
 function sortLeads(leads) {
-  const withDate = leads.filter(l => l.followUpDate);
-  const withoutDate = leads.filter(l => !l.followUpDate);
-  withDate.sort((a, b) => new Date(a.followUpDate) - new Date(b.followUpDate));
-  return [...withDate, ...withoutDate.slice().reverse()];
+  const sortByFollowUp = (arr) => {
+    const withDate = arr.filter(l => l.followUpDate);
+    const withoutDate = arr.filter(l => !l.followUpDate);
+    withDate.sort((a, b) => new Date(a.followUpDate) - new Date(b.followUpDate));
+    return [...withDate, ...withoutDate.slice().reverse()];
+  };
+  const urgent = leads.filter(l => l.priority === 'مستعجل');
+  const normal = leads.filter(l => l.priority !== 'مستعجل');
+  return [...sortByFollowUp(urgent), ...sortByFollowUp(normal)];
+}
+
+function isStale(lead) {
+  if (['تم الاتفاق', 'رفض'].indexOf(lead.status) !== -1) return false;
+  if (!lead.lastUpdated) return false;
+  const days = (new Date() - new Date(lead.lastUpdated)) / (1000 * 60 * 60 * 24);
+  return days >= 3;
 }
 
 function toWhatsAppNumber(phone) {
   let digits = String(phone || '').replace(/[^0-9]/g, '');
   if (digits.startsWith('0')) digits = '20' + digits.substring(1);
   return digits;
+}
+
+function normalizePhoneJs(phone) {
+  return String(phone || '').replace(/[^0-9]/g, '');
+}
+
+function toggleReport() {
+  const card = document.getElementById('reportCard');
+  if (card.classList.contains('hidden')) {
+    renderReport();
+    card.classList.remove('hidden');
+  } else {
+    card.classList.add('hidden');
+  }
+}
+
+function renderReport() {
+  const stats = {};
+  allLeads.forEach(l => {
+    if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
+    stats[l.employee].total++;
+    if (l.status === 'تم الاتفاق') stats[l.employee].closed++;
+  });
+  const names = Object.keys(stats);
+  if (names.length === 0) {
+    document.getElementById('reportContent').innerHTML = '<p style="text-align:center;color:#888">مفيش بيانات لسه</p>';
+    return;
+  }
+  document.getElementById('reportContent').innerHTML = names.map(name => {
+    const s = stats[name];
+    const rate = s.total ? Math.round((s.closed / s.total) * 100) : 0;
+    return `<div class="lead-row"><b>${name}</b><span>${s.total} رقم — ${s.closed} صفقة — ${rate}%</span></div>`;
+  }).join('');
+}
+
+function viewLog(rowNum, phone) {
+  fetch(`${SCRIPT_URL}?action=getLog&code=${encodeURIComponent(currentCode)}&phone=${encodeURIComponent(phone)}`)
+    .then(r => r.json())
+    .then(data => {
+      const entries = data.log || [];
+      if (entries.length === 0) {
+        alert('مفيش سجل تغييرات لسه لهذا الرقم');
+        return;
+      }
+      const text = entries.map(e => {
+        const d = e.date ? new Date(e.date).toLocaleString('ar-EG') : '';
+        return `${d} — ${e.employee}: ${e.change}`;
+      }).join('\n');
+      alert(text);
+    })
+    .catch(() => alert('في مشكلة في جلب السجل'));
+}
+
+function archiveNow() {
+  if (!confirm('هيتم نقل الأرقام "تم الاتفاق" أو "رفض" الأقدم من 30 يوم لتبويب الأرشيف. تحب تكمل؟')) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'archiveNow', code: currentCode })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert(`تم أرشفة ${data.archivedCount} رقم`);
+        loadLeads();
+      } else {
+        alert('حصل خطأ: ' + (data.error || 'غير معروف'));
+      }
+    })
+    .catch(() => alert('في مشكلة في الاتصال'));
 }
 
 function formatDateForInput(val) {
@@ -325,6 +422,8 @@ function renderLeads(leads) {
         <span class="tag">${lead.governorate || '-'}</span>
         <span class="tag">${lead.department}</span>
         <span class="tag">${lead.employee}</span>
+        ${lead.priority === 'مستعجل' ? '<span class="tag" style="background:#fee2e2;color:#991b1b">🔴 مستعجل</span>' : ''}
+        ${currentRole === 'admin' && isStale(lead) ? '<span class="tag" style="background:#fff3cd;color:#7a5b00">⚠️ متأخر بدون رد</span>' : ''}
       </div>
       <div class="lead-row">
         <span class="status-badge ${statusClass}">${lead.status}</span>
@@ -350,7 +449,8 @@ function renderLeads(leads) {
         </select>
         <select id="reEmp-${lead.rowNum}"></select>
         <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
-      </div>` : ''}
+      </div>
+      <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
     `;
     container.appendChild(div);
     if (currentRole === 'admin') {
