@@ -65,6 +65,7 @@
   .kpi { background:#eef6f6; color:#0d6e6e; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:20px; white-space: nowrap; }
   .filters-row { display:flex; gap:8px; margin-bottom:12px; }
   .filters-row input, .filters-row select { margin-top: 0; }
+  .admin-tools-row { display:flex; gap:8px; margin-bottom:12px; }
   .sub-block { border-top:1px dashed #ddd; padding-top:8px; margin-top:8px; }
 </style>
 </head>
@@ -106,7 +107,7 @@
 
 <div class="card hidden" id="listCard">
   <h2 id="listTitle">الأرقام</h2>
-  <div id="adminToolsRow" class="hidden" style="display:flex; gap:8px; margin-bottom:12px;">
+  <div id="adminToolsRow" class="hidden admin-tools-row">
     <button class="secondary" style="margin-top:0" onclick="toggleReport()">📊 تقرير الأداء</button>
     <button class="secondary" style="margin-top:0" onclick="archiveNow()">🗄 أرشفة القديم</button>
   </div>
