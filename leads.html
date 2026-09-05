@@ -422,6 +422,20 @@ function renderLeads(leads) {
           ${STATUSES.map(s => `<option value="${s}" ${s === lead.status ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </div>
+      ${lead.status === 'تم الاتفاق' ? `
+      <div class="lead-row sub-block" style="display:block">
+        <label style="margin-top:0">العنوان بالتفصيل</label>
+        <textarea id="address-${lead.rowNum}" rows="2" placeholder="العنوان بالتفصيل...">${lead.addressDetails || ''}</textarea>
+        <label>تفاصيل الاتفاق مع العميل</label>
+        <textarea id="agreement-${lead.rowNum}" rows="2" placeholder="اللي اتفقتوا عليه...">${lead.agreementDetails || ''}</textarea>
+        <label>رقم موبايل 2 (اختياري)</label>
+        <input type="text" id="phone2-${lead.rowNum}" placeholder="رقم تاني للعميل" value="${lead.phone2 || ''}">
+        <label>تاريخ التنفيذ المتفق عليه</label>
+        <input type="date" id="execdate-${lead.rowNum}" value="${formatDateForInput(lead.executionDate)}">
+        <label>نوع الجهاز</label>
+        <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
+        <button class="secondary" onclick="saveDealDetails(${lead.rowNum})">حفظ تفاصيل الاتفاق</button>
+      </div>` : ''}
       <div class="lead-row sub-block" style="display:block">
         <label style="margin-top:0">المحافظة</label>
         <select id="gov-${lead.rowNum}"></select>
@@ -504,6 +518,21 @@ function reassignLead(rowNum) {
   fetch(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function saveDealDetails(rowNum) {
+  const addressDetails = document.getElementById(`address-${rowNum}`).value;
+  const agreementDetails = document.getElementById(`agreement-${rowNum}`).value;
+  const phone2 = document.getElementById(`phone2-${rowNum}`).value;
+  const executionDate = document.getElementById(`execdate-${rowNum}`).value;
+  const deviceType = document.getElementById(`device-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, addressDetails, agreementDetails, phone2, executionDate, deviceType })
   })
     .then(r => r.json())
     .then(() => loadLeads())
