@@ -434,6 +434,8 @@ function renderLeads(leads) {
         <input type="date" id="execdate-${lead.rowNum}" value="${formatDateForInput(lead.executionDate)}">
         <label>نوع الجهاز</label>
         <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
+        <label>السعر</label>
+        <input type="text" id="price-${lead.rowNum}" placeholder="السعر المتفق عليه" value="${lead.price || ''}">
         <button class="secondary" onclick="saveDealDetails(${lead.rowNum})">حفظ تفاصيل الاتفاق</button>
       </div>` : ''}
       <div class="lead-row sub-block" style="display:block">
@@ -530,9 +532,10 @@ function saveDealDetails(rowNum) {
   const phone2 = document.getElementById(`phone2-${rowNum}`).value;
   const executionDate = document.getElementById(`execdate-${rowNum}`).value;
   const deviceType = document.getElementById(`device-${rowNum}`).value;
+  const price = document.getElementById(`price-${rowNum}`).value;
   fetch(SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, addressDetails, agreementDetails, phone2, executionDate, deviceType })
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
   })
     .then(r => r.json())
     .then(() => loadLeads())
