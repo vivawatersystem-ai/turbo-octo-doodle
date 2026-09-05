@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توزيع أرقام العملاء - Vivawatersystem</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: #f2f6f8;
+    margin: 0;
+    padding: 16px;
+    color: #1f2d3d;
+  }
+  .card {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 20px; text-align: center; color: #0d6e6e; }
+  h2 { font-size: 16px; color: #0d6e6e; margin-top: 0; }
+  label { display: block; margin: 10px 0 4px; font-size: 14px; font-weight: 600; }
+  input, select, textarea {
+    width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px;
+    font-size: 14px; background: #fafafa;
+  }
+  button {
+    margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 8px;
+    background: #0d6e6e; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer;
+  }
+  button:hover { background: #0a5757; }
+  button.secondary { background: #7a8a99; }
+  .lead {
+    border: 1px solid #e3e8ec; border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    background: #fbfdfd;
+  }
+  .lead-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .lead-row b { color: #444; }
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
+  }
+  .s-جديد { background: #e0e7ff; color: #3730a3; }
+  .s-تم_التواصل { background: #fef3c7; color: #92400e; }
+  .s-مهتم { background: #dbeafe; color: #1e40af; }
+  .s-مغلق_ناجح { background: #d1fae5; color: #065f46; }
+  .s-مغلق_مرفوض { background: #fee2e2; color: #991b1b; }
+  #msg { text-align: center; font-size: 14px; margin-top: 10px; min-height: 18px; }
+  .error { color: #c0392b; }
+  .success { color: #1e8449; }
+  .hidden { display: none; }
+  .tag { display:inline-block; background:#eef2f2; padding:2px 8px; border-radius:6px; font-size:12px; margin-right:4px;}
+</style>
+</head>
+<body>
+
+<div class="card" id="loginCard">
+  <h1>💧 توزيع أرقام العملاء</h1>
+  <label>كود الموظف</label>
+  <input type="text" id="codeInput" placeholder="مثال: EMP01" autocomplete="off">
+  <button onclick="login()">دخول</button>
+  <div id="msg"></div>
+</div>
+
+<div class="card hidden" id="adminCard">
+  <h2>إضافة رقم جديد</h2>
+  <label>رقم الواتساب</label>
+  <input type="text" id="newPhone" placeholder="01xxxxxxxxx">
+  <label>اسم العميل (اختياري)</label>
+  <input type="text" id="newName">
+  <label>المحافظة</label>
+  <select id="newGov"></select>
+  <label>القسم</label>
+  <select id="newDept" onchange="suggestEmployee()">
+    <option value="سيلز">سيلز</option>
+    <option value="صيانة">صيانة</option>
+  </select>
+  <label>الموظف المسؤول (يقترحه النظام تلقائي - تقدر تغيّره)</label>
+  <select id="newEmployee"></select>
+  <label>ملاحظات (اختياري)</label>
+  <textarea id="newNotes" rows="2"></textarea>
+  <button onclick="submitLead()">إضافة الرقم</button>
+  <div id="addMsg"></div>
+</div>
+
+<div class="card">
+  <h2 id="listTitle">الأرقام</h2>
+  <div id="leadsList"></div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGN9ukGTQ4N9mP7G03U-l209HZwQq7Vp9f6p3khBe3OAFvv4A1QD9II8mMgX5THl1e/exec';
+
+const GOVERNORATES = [
+  'القاهرة','الجيزة','الإسكندرية','الدقهلية','البحر الأحمر','البحيرة','الفيوم',
+  'الغربية','الإسماعيلية','المنوفية','المنيا','القليوبية','الوادي الجديد','السويس',
+  'أسوان','أسيوط','بني سويف','بورسعيد','دمياط','الشرقية','جنوب سيناء','كفر الشيخ',
+  'مطروح','الأقصر','قنا','شمال سيناء','سوهاج'
+];
+
+const DEPT_EMPLOYEES = {
+  'سيلز': ['فاطمة'],
+  'صيانة': ['سندس', 'شهد', 'جنة']
+};
+
+const STATUSES = ['جديد', 'تم التواصل', 'مهتم', 'مغلق ناجح', 'مغلق مرفوض'];
+
+let currentCode = '';
+let currentRole = '';
+
+function populateStaticLists() {
+  const govSelect = document.getElementById('newGov');
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    govSelect.appendChild(opt);
+  });
+  suggestEmployee();
+}
+
+function suggestEmployee() {
+  const dept = document.getElementById('newDept').value;
+  const empSelect = document.getElementById('newEmployee');
+  empSelect.innerHTML = '';
+  (DEPT_EMPLOYEES[dept] || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    empSelect.appendChild(opt);
+  });
+}
+
+function login() {
+  const code = document.getElementById('codeInput').value.trim();
+  if (!code) return;
+  setMsg('جاري التحقق...', '');
+  fetch(`${SCRIPT_URL}?action=checkCode&code=${encodeURIComponent(code)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.valid) {
+        setMsg('كود غير صحيح', 'error');
+        return;
+      }
+      currentCode = code;
+      currentRole = data.role;
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('listTitle').textContent =
+        currentRole === 'admin' ? 'كل الأرقام' : `أرقام ${data.name}`;
+      if (currentRole === 'admin') {
+        document.getElementById('adminCard').classList.remove('hidden');
+      }
+      loadLeads();
+    })
+    .catch(() => setMsg('في مشكلة في الاتصال', 'error'));
+}
+
+function setMsg(text, cls) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = cls;
+}
+
+function submitLead() {
+  const payload = {
+    action: 'addLead',
+    code: currentCode,
+    phone: document.getElementById('newPhone').value.trim(),
+    customerName: document.getElementById('newName').value.trim(),
+    governorate: document.getElementById('newGov').value,
+    department: document.getElementById('newDept').value,
+    employeeOverride: document.getElementById('newEmployee').value,
+    notes: document.getElementById('newNotes').value.trim()
+  };
+  if (!payload.phone) {
+    document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
+    document.getElementById('addMsg').className = 'error';
+    return;
+  }
+  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('addMsg').textContent = 'حصل خطأ: ' + data.error;
+        document.getElementById('addMsg').className = 'error';
+        return;
+      }
+      document.getElementById('addMsg').textContent = `تمت الإضافة، اتوزع على: ${data.assignedEmployee}`;
+      document.getElementById('addMsg').className = 'success';
+      document.getElementById('newPhone').value = '';
+      document.getElementById('newName').value = '';
+      document.getElementById('newNotes').value = '';
+      loadLeads();
+    })
+    .catch(() => {
+      document.getElementById('addMsg').textContent = 'في مشكلة في الاتصال';
+      document.getElementById('addMsg').className = 'error';
+    });
+}
+
+function loadLeads() {
+  fetch(`${SCRIPT_URL}?action=getLeads&code=${encodeURIComponent(currentCode)}`)
+    .then(r => r.json())
+    .then(data => renderLeads(data.leads || []))
+    .catch(() => {});
+}
+
+function renderLeads(leads) {
+  const container = document.getElementById('leadsList');
+  container.innerHTML = '';
+  if (leads.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#888">مفيش أرقام لسه</p>';
+    return;
+  }
+  leads.slice().reverse().forEach(lead => {
+    const div = document.createElement('div');
+    div.className = 'lead';
+    const statusClass = 's-' + lead.status.replace(/ /g, '_');
+    div.innerHTML = `
+      <div class="lead-row"><span>📱 ${lead.phone}</span><span>${lead.customerName || ''}</span></div>
+      <div class="lead-row">
+        <span class="tag">${lead.governorate || '-'}</span>
+        <span class="tag">${lead.department}</span>
+        <span class="tag">${lead.employee}</span>
+      </div>
+      <div class="lead-row">
+        <span class="status-badge ${statusClass}">${lead.status}</span>
+        <select onchange="changeStatus(${lead.rowNum}, this.value)">
+          ${STATUSES.map(s => `<option value="${s}" ${s===lead.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      ${lead.notes ? `<div class="lead-row"><span>📝 ${lead.notes}</span></div>` : ''}
+    `;
+    container.appendChild(div);
+  });
+}
+
+function changeStatus(rowNum, newStatus) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status: newStatus })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+populateStaticLists();
+</script>
+</body>
+</html>
