@@ -314,6 +314,16 @@ function normalizePhoneJs(phone) {
   return String(phone || '').replace(/[^0-9]/g, '');
 }
 
+function updateClosedDealExecuted(rowNum, executed) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateClosedDeal', code: currentCode, rowNum, executed })
+  })
+    .then(r => r.json())
+    .then(() => renderReport())
+    .catch(() => {});
+}
+
 function toggleReport() {
   const card = document.getElementById('reportCard');
   if (card.classList.contains('hidden')) {
@@ -345,7 +355,7 @@ function renderReport() {
       closedDeals.forEach(l => {
         if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
         stats[l.employee].total++;
-        stats[l.employee].closed++;
+        if (l.executed !== 'لا') stats[l.employee].closed++;
       });
 
       const names = Object.keys(stats);
@@ -372,6 +382,13 @@ function renderReport() {
               <div class="lead-row"><b>${l.customerName || l.phone}</b><span>الموظف: ${l.employee}</span></div>
               <div class="lead-row"><span>الفني: ${technician}</span><span>التاريخ: ${dateShown}</span></div>
               <div class="lead-row"><span>المنفذ: ${executed}</span></div>
+              <div class="lead-row">
+                <span>تم التنفيذ فعليًا؟</span>
+                <select onchange="updateClosedDealExecuted(${l.rowNum}, this.value)">
+                  <option value="نعم" ${l.executed !== 'لا' ? 'selected' : ''}>نعم — تُحسب العمولة</option>
+                  <option value="لا" ${l.executed === 'لا' ? 'selected' : ''}>لا — متتحسبش العمولة</option>
+                </select>
+              </div>
             </div>`;
         }).join('');
       }
