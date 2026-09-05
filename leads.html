@@ -39,7 +39,7 @@
     border: 1px solid #e3e8ec; border-radius: 10px; padding: 12px; margin-bottom: 10px;
     background: #fbfdfd;
   }
-  .lead-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .lead-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 4px; gap: 8px; }
   .lead-row b { color: #444; }
   .status-badge {
     display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
@@ -57,6 +57,15 @@
   .success { color: #1e8449; }
   .hidden { display: none; }
   .tag { display:inline-block; background:#eef2f2; padding:2px 8px; border-radius:6px; font-size:12px; margin-right:4px;}
+  .wa-btn {
+    text-decoration: none; background: #25D366; color: #fff; padding: 4px 12px;
+    border-radius: 6px; font-size: 12px; font-weight: bold; white-space: nowrap;
+  }
+  .kpi-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .kpi { background:#eef6f6; color:#0d6e6e; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:20px; white-space: nowrap; }
+  .filters-row { display:flex; gap:8px; margin-bottom:12px; }
+  .filters-row input, .filters-row select { margin-top: 0; }
+  .sub-block { border-top:1px dashed #ddd; padding-top:8px; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -64,7 +73,7 @@
 <div class="card" id="loginCard">
   <h1>💧 توزيع أرقام العملاء</h1>
   <label>كود الموظف</label>
-  <input type="text" id="codeInput" placeholder="مثال: EMP01" autocomplete="off">
+  <input type="text" id="codeInput" placeholder="أدخل كودك" autocomplete="off">
   <button onclick="login()">دخول</button>
   <div id="msg"></div>
 </div>
@@ -90,8 +99,13 @@
   <div id="addMsg"></div>
 </div>
 
-<div class="card">
+<div class="card hidden" id="listCard">
   <h2 id="listTitle">الأرقام</h2>
+  <div id="kpiBar" class="kpi-bar"></div>
+  <div class="filters-row">
+    <input type="text" id="searchInput" placeholder="بحث برقم أو اسم..." oninput="applyFilters()" style="flex:2">
+    <select id="statusFilter" onchange="applyFilters()" style="flex:1"></select>
+  </div>
   <div id="leadsList"></div>
 </div>
 
@@ -114,6 +128,7 @@ const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق',
 
 let currentCode = '';
 let currentRole = '';
+let allLeads = [];
 
 function populateStaticLists() {
   const govSelect = document.getElementById('newGov');
@@ -122,6 +137,17 @@ function populateStaticLists() {
     opt.value = g; opt.textContent = g;
     govSelect.appendChild(opt);
   });
+
+  const statusFilter = document.getElementById('statusFilter');
+  const allOpt = document.createElement('option');
+  allOpt.value = ''; allOpt.textContent = 'كل الحالات';
+  statusFilter.appendChild(allOpt);
+  STATUSES.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    statusFilter.appendChild(opt);
+  });
+
   suggestEmployee();
 }
 
@@ -150,6 +176,7 @@ function login() {
       currentCode = code;
       currentRole = data.role;
       document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('listCard').classList.remove('hidden');
       document.getElementById('listTitle').textContent =
         currentRole === 'admin' ? 'كل الأرقام' : `أرقام ${data.name}`;
       if (currentRole === 'admin') {
@@ -166,7 +193,7 @@ function setMsg(text, cls) {
   el.className = cls;
 }
 
-function submitLead() {
+function submitLead(force) {
   const payload = {
     action: 'addLead',
     code: currentCode,
@@ -175,7 +202,8 @@ function submitLead() {
     governorate: document.getElementById('newGov').value,
     department: document.getElementById('newDept').value,
     employeeOverride: document.getElementById('newEmployee').value,
-    notes: document.getElementById('newNotes').value.trim()
+    notes: document.getElementById('newNotes').value.trim(),
+    confirmDuplicate: !!force
   };
   if (!payload.phone) {
     document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
@@ -185,6 +213,15 @@ function submitLead() {
   fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
     .then(r => r.json())
     .then(data => {
+      if (data.duplicate) {
+        const ex = data.existingLead;
+        const exDate = ex.date ? new Date(ex.date).toLocaleDateString('ar-EG') : '';
+        const proceed = confirm(
+          `الرقم ده موجود قبل كده بتاريخ ${exDate} عند ${ex.employee} (${ex.department}) - الحالة: ${ex.status}.\nتحب تضيفه تاني؟`
+        );
+        if (proceed) submitLead(true);
+        return;
+      }
       if (data.error) {
         document.getElementById('addMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('addMsg').className = 'error';
@@ -206,24 +243,83 @@ function submitLead() {
 function loadLeads() {
   fetch(`${SCRIPT_URL}?action=getLeads&code=${encodeURIComponent(currentCode)}`)
     .then(r => r.json())
-    .then(data => renderLeads(data.leads || []))
+    .then(data => {
+      allLeads = data.leads || [];
+      renderKPIs(allLeads);
+      applyFilters();
+    })
     .catch(() => {});
+}
+
+function renderKPIs(leads) {
+  const container = document.getElementById('kpiBar');
+  const total = leads.length;
+  const counts = {};
+  STATUSES.forEach(s => (counts[s] = 0));
+  leads.forEach(l => { if (counts.hasOwnProperty(l.status)) counts[l.status]++; });
+  container.innerHTML =
+    `<span class="kpi">الإجمالي: ${total}</span>` +
+    STATUSES.filter(s => counts[s] > 0).map(s => `<span class="kpi">${s}: ${counts[s]}</span>`).join('');
+}
+
+function applyFilters() {
+  const searchTerm = document.getElementById('searchInput').value.trim();
+  const statusFilter = document.getElementById('statusFilter').value;
+  let filtered = allLeads;
+  if (statusFilter) {
+    filtered = filtered.filter(l => l.status === statusFilter);
+  }
+  if (searchTerm) {
+    filtered = filtered.filter(l =>
+      (l.phone && String(l.phone).includes(searchTerm)) ||
+      (l.customerName && String(l.customerName).includes(searchTerm))
+    );
+  }
+  renderLeads(sortLeads(filtered));
+}
+
+function sortLeads(leads) {
+  const withDate = leads.filter(l => l.followUpDate);
+  const withoutDate = leads.filter(l => !l.followUpDate);
+  withDate.sort((a, b) => new Date(a.followUpDate) - new Date(b.followUpDate));
+  return [...withDate, ...withoutDate.slice().reverse()];
+}
+
+function toWhatsAppNumber(phone) {
+  let digits = String(phone || '').replace(/[^0-9]/g, '');
+  if (digits.startsWith('0')) digits = '20' + digits.substring(1);
+  return digits;
+}
+
+function formatDateForInput(val) {
+  if (!val) return '';
+  try {
+    const d = new Date(val);
+    if (isNaN(d)) return '';
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return '';
+  }
 }
 
 function renderLeads(leads) {
   const container = document.getElementById('leadsList');
   container.innerHTML = '';
   if (leads.length === 0) {
-    container.innerHTML = '<p style="text-align:center;color:#888">مفيش أرقام لسه</p>';
+    container.innerHTML = '<p style="text-align:center;color:#888">مفيش أرقام تطابق البحث</p>';
     return;
   }
-  leads.slice().reverse().forEach(lead => {
+  leads.forEach(lead => {
     const div = document.createElement('div');
     div.className = 'lead';
     const statusClass = 's-' + lead.status.replace(/ /g, '_');
     const displayDate = lead.date ? new Date(lead.date).toLocaleDateString('ar-EG') : '';
     div.innerHTML = `
-      <div class="lead-row"><span>📱 ${lead.phone}</span><span>${lead.customerName || ''}</span></div>
+      <div class="lead-row">
+        <span>📱 ${lead.phone}</span>
+        <a class="wa-btn" href="https://wa.me/${toWhatsAppNumber(lead.phone)}" target="_blank">واتساب</a>
+      </div>
+      <div class="lead-row"><span>${lead.customerName || ''}</span></div>
       <div class="lead-row">
         <span class="tag">📅 ${displayDate}</span>
         <span class="tag">${lead.governorate || '-'}</span>
@@ -233,19 +329,24 @@ function renderLeads(leads) {
       <div class="lead-row">
         <span class="status-badge ${statusClass}">${lead.status}</span>
         <select onchange="changeStatus(${lead.rowNum}, this.value)">
-          ${STATUSES.map(s => `<option value="${s}" ${s===lead.status?'selected':''}>${s}</option>`).join('')}
+          ${STATUSES.map(s => `<option value="${s}" ${s === lead.status ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </div>
-      <div class="lead-row" style="display:block">
+      <div class="lead-row sub-block" style="display:block">
         <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
         <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
       </div>
+      <div class="lead-row sub-block" style="display:block">
+        <label style="margin-top:0">تاريخ المتابعة</label>
+        <input type="date" id="followup-${lead.rowNum}" value="${formatDateForInput(lead.followUpDate)}">
+        <button class="secondary" onclick="saveFollowUp(${lead.rowNum})">حفظ تاريخ المتابعة</button>
+      </div>
       ${currentRole === 'admin' ? `
-      <div class="lead-row" style="display:block;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px">
+      <div class="lead-row sub-block" style="display:block">
         <label style="margin-top:0">تغيير القسم / الموظف</label>
         <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})">
-          <option value="سيلز" ${lead.department==='سيلز'?'selected':''}>سيلز</option>
-          <option value="صيانة" ${lead.department==='صيانة'?'selected':''}>صيانة</option>
+          <option value="سيلز" ${lead.department === 'سيلز' ? 'selected' : ''}>سيلز</option>
+          <option value="صيانة" ${lead.department === 'صيانة' ? 'selected' : ''}>صيانة</option>
         </select>
         <select id="reEmp-${lead.rowNum}"></select>
         <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
@@ -294,6 +395,17 @@ function saveNotes(rowNum) {
   fetch(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function saveFollowUp(rowNum) {
+  const val = document.getElementById(`followup-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, followUpDate: val })
   })
     .then(r => r.json())
     .then(() => loadLeads())
