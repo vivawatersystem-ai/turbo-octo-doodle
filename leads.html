@@ -240,9 +240,51 @@ function renderLeads(leads) {
         <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
         <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
       </div>
+      ${currentRole === 'admin' ? `
+      <div class="lead-row" style="display:block;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px">
+        <label style="margin-top:0">تغيير القسم / الموظف</label>
+        <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})">
+          <option value="سيلز" ${lead.department==='سيلز'?'selected':''}>سيلز</option>
+          <option value="صيانة" ${lead.department==='صيانة'?'selected':''}>صيانة</option>
+        </select>
+        <select id="reEmp-${lead.rowNum}"></select>
+        <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
+      </div>` : ''}
     `;
     container.appendChild(div);
+    if (currentRole === 'admin') {
+      populateReassignEmployees(lead.rowNum, lead.department, lead.employee);
+    }
   });
+}
+
+function populateReassignEmployees(rowNum, department, currentEmployee) {
+  const empSelect = document.getElementById(`reEmp-${rowNum}`);
+  if (!empSelect) return;
+  empSelect.innerHTML = '';
+  (DEPT_EMPLOYEES[department] || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    if (name === currentEmployee) opt.selected = true;
+    empSelect.appendChild(opt);
+  });
+}
+
+function updateReassignEmployees(rowNum) {
+  const dept = document.getElementById(`reDept-${rowNum}`).value;
+  populateReassignEmployees(rowNum, dept, null);
+}
+
+function reassignLead(rowNum) {
+  const newDepartment = document.getElementById(`reDept-${rowNum}`).value;
+  const newEmployee = document.getElementById(`reEmp-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function saveNotes(rowNum) {
