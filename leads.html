@@ -44,11 +44,14 @@
   .status-badge {
     display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
   }
+  .s-جديد { background: #e0e7ff; color: #3730a3; }
   .s-مهتم { background: #dbeafe; color: #1e40af; }
   .s-متابعة { background: #fef3c7; color: #92400e; }
   .s-تم_الاتفاق { background: #d1fae5; color: #065f46; }
   .s-تم_التواصل { background: #e0e7ff; color: #3730a3; }
   .s-محافظة { background: #f3e8ff; color: #6b21a8; }
+  .s-السعر_غالي { background: #ffe4d6; color: #9a3412; }
+  .s-رفض { background: #fee2e2; color: #991b1b; }
   #msg { text-align: center; font-size: 14px; margin-top: 10px; min-height: 18px; }
   .error { color: #c0392b; }
   .success { color: #1e8449; }
@@ -107,7 +110,7 @@ const DEPT_EMPLOYEES = {
   'صيانة': ['سندس', 'شهد', 'جنة']
 };
 
-const STATUSES = ['مهتم', 'متابعة', 'تم الاتفاق', 'تم التواصل', 'محافظة'];
+const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق', 'تم التواصل', 'محافظة', 'السعر غالي', 'رفض'];
 
 let currentCode = '';
 let currentRole = '';
@@ -233,10 +236,26 @@ function renderLeads(leads) {
           ${STATUSES.map(s => `<option value="${s}" ${s===lead.status?'selected':''}>${s}</option>`).join('')}
         </select>
       </div>
-      ${lead.notes ? `<div class="lead-row"><span>📝 ${lead.notes}</span></div>` : ''}
+      <div class="lead-row" style="display:block">
+        <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
+        <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
+      </div>
     `;
     container.appendChild(div);
   });
+}
+
+function saveNotes(rowNum) {
+  const textarea = document.getElementById(`notes-${rowNum}`);
+  const status = textarea.dataset.status;
+  const notes = textarea.value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function changeStatus(rowNum, newStatus) {
