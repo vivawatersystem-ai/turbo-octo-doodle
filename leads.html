@@ -44,11 +44,11 @@
   .status-badge {
     display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
   }
-  .s-جديد { background: #e0e7ff; color: #3730a3; }
-  .s-تم_التواصل { background: #fef3c7; color: #92400e; }
   .s-مهتم { background: #dbeafe; color: #1e40af; }
-  .s-مغلق_ناجح { background: #d1fae5; color: #065f46; }
-  .s-مغلق_مرفوض { background: #fee2e2; color: #991b1b; }
+  .s-متابعة { background: #fef3c7; color: #92400e; }
+  .s-تم_الاتفاق { background: #d1fae5; color: #065f46; }
+  .s-تم_التواصل { background: #e0e7ff; color: #3730a3; }
+  .s-محافظة { background: #f3e8ff; color: #6b21a8; }
   #msg { text-align: center; font-size: 14px; margin-top: 10px; min-height: 18px; }
   .error { color: #c0392b; }
   .success { color: #1e8449; }
@@ -107,7 +107,7 @@ const DEPT_EMPLOYEES = {
   'صيانة': ['سندس', 'شهد', 'جنة']
 };
 
-const STATUSES = ['جديد', 'تم التواصل', 'مهتم', 'مغلق ناجح', 'مغلق مرفوض'];
+const STATUSES = ['مهتم', 'متابعة', 'تم الاتفاق', 'تم التواصل', 'محافظة'];
 
 let currentCode = '';
 let currentRole = '';
