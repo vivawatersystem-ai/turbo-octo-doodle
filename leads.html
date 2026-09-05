@@ -218,9 +218,11 @@ function renderLeads(leads) {
     const div = document.createElement('div');
     div.className = 'lead';
     const statusClass = 's-' + lead.status.replace(/ /g, '_');
+    const displayDate = lead.date ? new Date(lead.date).toLocaleDateString('ar-EG') : '';
     div.innerHTML = `
       <div class="lead-row"><span>📱 ${lead.phone}</span><span>${lead.customerName || ''}</span></div>
       <div class="lead-row">
+        <span class="tag">📅 ${displayDate}</span>
         <span class="tag">${lead.governorate || '-'}</span>
         <span class="tag">${lead.department}</span>
         <span class="tag">${lead.employee}</span>
