@@ -55,7 +55,7 @@
   #msg { text-align: center; font-size: 14px; margin-top: 10px; min-height: 18px; }
   .error { color: #c0392b; }
   .success { color: #1e8449; }
-  .hidden { display: none; }
+  .hidden { display: none !important; }
   .tag { display:inline-block; background:#eef2f2; padding:2px 8px; border-radius:6px; font-size:12px; margin-right:4px;}
   .wa-btn {
     text-decoration: none; background: #25D366; color: #fff; padding: 4px 12px;
@@ -67,6 +67,9 @@
   .filters-row input, .filters-row select { margin-top: 0; }
   .admin-tools-row { display:flex; gap:8px; margin-bottom:12px; }
   .sub-block { border-top:1px dashed #ddd; padding-top:8px; margin-top:8px; }
+  .lead-summary { cursor: pointer; padding: 2px 0; }
+  .lead-summary:hover { opacity: 0.85; }
+  .lead-details { margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -142,6 +145,7 @@ const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق',
 let currentCode = '';
 let currentRole = '';
 let allLeads = [];
+let expandedRows = new Set();
 
 function populateStaticLists() {
   const statusFilter = document.getElementById('statusFilter');
@@ -461,67 +465,78 @@ function renderLeads(leads) {
     div.className = 'lead';
     const statusClass = 's-' + lead.status.replace(/ /g, '_');
     const displayDate = lead.date ? new Date(lead.date).toLocaleDateString('ar-EG') : '';
+    const isExpanded = expandedRows.has(lead.rowNum);
     div.innerHTML = `
-      <div class="lead-row">
-        <span>📱 ${lead.phone}</span>
-        <a class="wa-btn" href="https://wa.me/${toWhatsAppNumber(lead.phone)}" target="_blank">واتساب</a>
+      <div class="lead-row lead-summary" onclick="toggleLeadDetails(${lead.rowNum})">
+        <span>
+          <b>${lead.customerName || 'بدون اسم'}</b>
+          <span class="tag" style="margin-right:6px">📱 ${lead.phone}</span>
+          ${lead.priority === 'مستعجل' ? '<span class="tag" style="background:#fee2e2;color:#991b1b">🔴</span>' : ''}
+          ${currentRole === 'admin' && isStale(lead) ? '<span class="tag" style="background:#fff3cd;color:#7a5b00">⚠️</span>' : ''}
+        </span>
+        <span>
+          <span class="status-badge ${statusClass}">${lead.status}</span>
+          <span id="arrow-${lead.rowNum}">${isExpanded ? '▴' : '▾'}</span>
+        </span>
       </div>
-      <div class="lead-row"><span>${lead.customerName || ''}</span></div>
-      <div class="lead-row">
-        <span class="tag">📅 ${displayDate}</span>
-        <span class="tag">${lead.governorate || '-'}</span>
-        <span class="tag">${lead.department}</span>
-        <span class="tag">${lead.employee}</span>
-        ${lead.priority === 'مستعجل' ? '<span class="tag" style="background:#fee2e2;color:#991b1b">🔴 مستعجل</span>' : ''}
-        ${currentRole === 'admin' && isStale(lead) ? '<span class="tag" style="background:#fff3cd;color:#7a5b00">⚠️ متأخر بدون رد</span>' : ''}
+      <div id="details-${lead.rowNum}" class="lead-details ${isExpanded ? '' : 'hidden'}">
+        <div class="lead-row">
+          <a class="wa-btn" href="https://wa.me/${toWhatsAppNumber(lead.phone)}" target="_blank">فتح واتساب</a>
+        </div>
+        <div class="lead-row">
+          <span class="tag">📅 ${displayDate}</span>
+          <span class="tag">${lead.governorate || '-'}</span>
+          <span class="tag">${lead.department}</span>
+          <span class="tag">${lead.employee}</span>
+        </div>
+        <div class="lead-row">
+          <span class="status-badge ${statusClass}">${lead.status}</span>
+          <select onchange="changeStatus(${lead.rowNum}, this.value)">
+            ${STATUSES.map(s => `<option value="${s}" ${s === lead.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        ${lead.status === 'تم الاتفاق' ? `
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">العنوان بالتفصيل</label>
+          <textarea id="address-${lead.rowNum}" rows="2" placeholder="العنوان بالتفصيل...">${lead.addressDetails || ''}</textarea>
+          <label>تفاصيل الاتفاق مع العميل</label>
+          <textarea id="agreement-${lead.rowNum}" rows="2" placeholder="اللي اتفقتوا عليه...">${lead.agreementDetails || ''}</textarea>
+          <label>رقم موبايل 2 (اختياري)</label>
+          <input type="text" id="phone2-${lead.rowNum}" placeholder="رقم تاني للعميل" value="${lead.phone2 || ''}">
+          <label>تاريخ التنفيذ المتفق عليه</label>
+          <input type="date" id="execdate-${lead.rowNum}" value="${formatDateForInput(lead.executionDate)}">
+          <label>نوع الجهاز</label>
+          <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
+          <label>السعر</label>
+          <input type="text" id="price-${lead.rowNum}" placeholder="السعر المتفق عليه" value="${lead.price || ''}">
+          <button class="secondary" onclick="saveDealDetails(${lead.rowNum})">حفظ تفاصيل الاتفاق</button>
+        </div>` : ''}
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">المحافظة</label>
+          <select id="gov-${lead.rowNum}"></select>
+          <button class="secondary" onclick="saveGovernorate(${lead.rowNum})">حفظ المحافظة</button>
+        </div>
+        <div class="lead-row sub-block" style="display:block">
+          <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
+          <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
+        </div>
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">تاريخ المتابعة</label>
+          <input type="date" id="followup-${lead.rowNum}" value="${formatDateForInput(lead.followUpDate)}">
+          <button class="secondary" onclick="saveFollowUp(${lead.rowNum})">حفظ تاريخ المتابعة</button>
+        </div>
+        ${currentRole === 'admin' ? `
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">تغيير القسم / الموظف</label>
+          <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})">
+            <option value="سيلز" ${lead.department === 'سيلز' ? 'selected' : ''}>سيلز</option>
+            <option value="صيانة" ${lead.department === 'صيانة' ? 'selected' : ''}>صيانة</option>
+          </select>
+          <select id="reEmp-${lead.rowNum}"></select>
+          <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
+        </div>
+        <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
       </div>
-      <div class="lead-row">
-        <span class="status-badge ${statusClass}">${lead.status}</span>
-        <select onchange="changeStatus(${lead.rowNum}, this.value)">
-          ${STATUSES.map(s => `<option value="${s}" ${s === lead.status ? 'selected' : ''}>${s}</option>`).join('')}
-        </select>
-      </div>
-      ${lead.status === 'تم الاتفاق' ? `
-      <div class="lead-row sub-block" style="display:block">
-        <label style="margin-top:0">العنوان بالتفصيل</label>
-        <textarea id="address-${lead.rowNum}" rows="2" placeholder="العنوان بالتفصيل...">${lead.addressDetails || ''}</textarea>
-        <label>تفاصيل الاتفاق مع العميل</label>
-        <textarea id="agreement-${lead.rowNum}" rows="2" placeholder="اللي اتفقتوا عليه...">${lead.agreementDetails || ''}</textarea>
-        <label>رقم موبايل 2 (اختياري)</label>
-        <input type="text" id="phone2-${lead.rowNum}" placeholder="رقم تاني للعميل" value="${lead.phone2 || ''}">
-        <label>تاريخ التنفيذ المتفق عليه</label>
-        <input type="date" id="execdate-${lead.rowNum}" value="${formatDateForInput(lead.executionDate)}">
-        <label>نوع الجهاز</label>
-        <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
-        <label>السعر</label>
-        <input type="text" id="price-${lead.rowNum}" placeholder="السعر المتفق عليه" value="${lead.price || ''}">
-        <button class="secondary" onclick="saveDealDetails(${lead.rowNum})">حفظ تفاصيل الاتفاق</button>
-      </div>` : ''}
-      <div class="lead-row sub-block" style="display:block">
-        <label style="margin-top:0">المحافظة</label>
-        <select id="gov-${lead.rowNum}"></select>
-        <button class="secondary" onclick="saveGovernorate(${lead.rowNum})">حفظ المحافظة</button>
-      </div>
-      <div class="lead-row sub-block" style="display:block">
-        <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
-        <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
-      </div>
-      <div class="lead-row sub-block" style="display:block">
-        <label style="margin-top:0">تاريخ المتابعة</label>
-        <input type="date" id="followup-${lead.rowNum}" value="${formatDateForInput(lead.followUpDate)}">
-        <button class="secondary" onclick="saveFollowUp(${lead.rowNum})">حفظ تاريخ المتابعة</button>
-      </div>
-      ${currentRole === 'admin' ? `
-      <div class="lead-row sub-block" style="display:block">
-        <label style="margin-top:0">تغيير القسم / الموظف</label>
-        <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})">
-          <option value="سيلز" ${lead.department === 'سيلز' ? 'selected' : ''}>سيلز</option>
-          <option value="صيانة" ${lead.department === 'صيانة' ? 'selected' : ''}>صيانة</option>
-        </select>
-        <select id="reEmp-${lead.rowNum}"></select>
-        <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
-      </div>
-      <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
     `;
     container.appendChild(div);
     populateGovernorateSelect(lead.rowNum, lead.governorate);
@@ -529,6 +544,21 @@ function renderLeads(leads) {
       populateReassignEmployees(lead.rowNum, lead.department, lead.employee);
     }
   });
+}
+
+function toggleLeadDetails(rowNum) {
+  const details = document.getElementById(`details-${rowNum}`);
+  const arrow = document.getElementById(`arrow-${rowNum}`);
+  if (!details) return;
+  if (details.classList.contains('hidden')) {
+    details.classList.remove('hidden');
+    expandedRows.add(rowNum);
+    if (arrow) arrow.textContent = '▴';
+  } else {
+    details.classList.add('hidden');
+    expandedRows.delete(rowNum);
+    if (arrow) arrow.textContent = '▾';
+  }
 }
 
 function populateGovernorateSelect(rowNum, currentGov) {
