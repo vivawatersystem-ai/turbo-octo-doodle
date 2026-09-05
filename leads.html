@@ -332,15 +332,53 @@ function renderReport() {
     if (l.status === 'تم الاتفاق') stats[l.employee].closed++;
   });
   const names = Object.keys(stats);
-  if (names.length === 0) {
-    document.getElementById('reportContent').innerHTML = '<p style="text-align:center;color:#888">مفيش بيانات لسه</p>';
-    return;
-  }
-  document.getElementById('reportContent').innerHTML = names.map(name => {
-    const s = stats[name];
-    const rate = s.total ? Math.round((s.closed / s.total) * 100) : 0;
-    return `<div class="lead-row"><b>${name}</b><span>${s.total} رقم — ${s.closed} صفقة — ${rate}%</span></div>`;
-  }).join('');
+  const summaryHtml = names.length === 0
+    ? '<p style="text-align:center;color:#888">مفيش بيانات لسه</p>'
+    : names.map(name => {
+        const s = stats[name];
+        const rate = s.total ? Math.round((s.closed / s.total) * 100) : 0;
+        return `<div class="lead-row"><b>${name}</b><span>${s.total} رقم — ${s.closed} صفقة — ${rate}%</span></div>`;
+      }).join('');
+
+  document.getElementById('reportContent').innerHTML =
+    `<h2 style="font-size:14px">ملخص لكل موظف</h2>${summaryHtml}` +
+    `<h2 style="font-size:14px;margin-top:16px">تفاصيل الصفقات المنفذة</h2>` +
+    `<p style="text-align:center;color:#888">جاري التحميل...</p>`;
+
+  fetch(`${SCRIPT_URL}?action=getWorkOrders&code=${encodeURIComponent(currentCode)}`)
+    .then(r => r.json())
+    .then(data => {
+      const orders = data.orders || [];
+      const ordersByPhone = {};
+      orders.forEach(o => { ordersByPhone[normalizePhoneJs(o.phone1)] = o; });
+
+      const closedLeads = allLeads.filter(l => l.status === 'تم الاتفاق');
+      let detailHtml;
+      if (closedLeads.length === 0) {
+        detailHtml = '<p style="text-align:center;color:#888">مفيش صفقات مقفولة لسه</p>';
+      } else {
+        detailHtml = closedLeads.map(l => {
+          const order = ordersByPhone[normalizePhoneJs(l.phone)];
+          const technician = order && order.technician ? order.technician : 'لسه ملحددش';
+          const executed = [l.agreementDetails, l.deviceType].filter(Boolean).join(' — ') || '-';
+          const dateShown = l.executionDate ? formatDateForInput(l.executionDate) :
+            (l.lastUpdated ? new Date(l.lastUpdated).toLocaleDateString('ar-EG') : '-');
+          return `
+            <div class="lead" style="margin-bottom:8px">
+              <div class="lead-row"><b>${l.customerName || l.phone}</b><span>الموظف: ${l.employee}</span></div>
+              <div class="lead-row"><span>الفني: ${technician}</span><span>التاريخ: ${dateShown}</span></div>
+              <div class="lead-row"><span>المنفذ: ${executed}</span></div>
+            </div>`;
+        }).join('');
+      }
+
+      document.getElementById('reportContent').innerHTML =
+        `<h2 style="font-size:14px">ملخص لكل موظف</h2>${summaryHtml}` +
+        `<h2 style="font-size:14px;margin-top:16px">تفاصيل الصفقات المنفذة</h2>${detailHtml}`;
+    })
+    .catch(() => {
+      document.getElementById('reportContent').innerHTML += '<p style="text-align:center;color:#c0392b">تعذر تحميل بيانات الفنيين</p>';
+    });
 }
 
 function viewLog(rowNum, phone) {
