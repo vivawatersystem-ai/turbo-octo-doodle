@@ -325,39 +325,43 @@ function toggleReport() {
 }
 
 function renderReport() {
-  const stats = {};
-  allLeads.forEach(l => {
-    if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
-    stats[l.employee].total++;
-    if (l.status === 'تم الاتفاق') stats[l.employee].closed++;
-  });
-  const names = Object.keys(stats);
-  const summaryHtml = names.length === 0
-    ? '<p style="text-align:center;color:#888">مفيش بيانات لسه</p>'
-    : names.map(name => {
-        const s = stats[name];
-        const rate = s.total ? Math.round((s.closed / s.total) * 100) : 0;
-        return `<div class="lead-row"><b>${name}</b><span>${s.total} رقم — ${s.closed} صفقة — ${rate}%</span></div>`;
-      }).join('');
+  document.getElementById('reportContent').innerHTML = '<p style="text-align:center;color:#888">جاري التحميل...</p>';
 
-  document.getElementById('reportContent').innerHTML =
-    `<h2 style="font-size:14px">ملخص لكل موظف</h2>${summaryHtml}` +
-    `<h2 style="font-size:14px;margin-top:16px">تفاصيل الصفقات المنفذة</h2>` +
-    `<p style="text-align:center;color:#888">جاري التحميل...</p>`;
-
-  fetch(`${SCRIPT_URL}?action=getWorkOrders&code=${encodeURIComponent(currentCode)}`)
-    .then(r => r.json())
-    .then(data => {
-      const orders = data.orders || [];
+  Promise.all([
+    fetch(`${SCRIPT_URL}?action=getClosedDeals&code=${encodeURIComponent(currentCode)}`).then(r => r.json()),
+    fetch(`${SCRIPT_URL}?action=getWorkOrders&code=${encodeURIComponent(currentCode)}`).then(r => r.json())
+  ])
+    .then(([closedData, ordersData]) => {
+      const closedDeals = closedData.deals || [];
+      const orders = ordersData.orders || [];
       const ordersByPhone = {};
       orders.forEach(o => { ordersByPhone[normalizePhoneJs(o.phone1)] = o; });
 
-      const closedLeads = allLeads.filter(l => l.status === 'تم الاتفاق');
+      const stats = {};
+      allLeads.forEach(l => {
+        if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
+        stats[l.employee].total++;
+      });
+      closedDeals.forEach(l => {
+        if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
+        stats[l.employee].total++;
+        stats[l.employee].closed++;
+      });
+
+      const names = Object.keys(stats);
+      const summaryHtml = names.length === 0
+        ? '<p style="text-align:center;color:#888">مفيش بيانات لسه</p>'
+        : names.map(name => {
+            const s = stats[name];
+            const rate = s.total ? Math.round((s.closed / s.total) * 100) : 0;
+            return `<div class="lead-row"><b>${name}</b><span>${s.total} رقم — ${s.closed} صفقة — ${rate}%</span></div>`;
+          }).join('');
+
       let detailHtml;
-      if (closedLeads.length === 0) {
+      if (closedDeals.length === 0) {
         detailHtml = '<p style="text-align:center;color:#888">مفيش صفقات مقفولة لسه</p>';
       } else {
-        detailHtml = closedLeads.map(l => {
+        detailHtml = closedDeals.map(l => {
           const order = ordersByPhone[normalizePhoneJs(l.phone)];
           const technician = order && order.technician ? order.technician : 'لسه ملحددش';
           const executed = [l.agreementDetails, l.deviceType].filter(Boolean).join(' — ') || '-';
@@ -377,7 +381,7 @@ function renderReport() {
         `<h2 style="font-size:14px;margin-top:16px">تفاصيل الصفقات المنفذة</h2>${detailHtml}`;
     })
     .catch(() => {
-      document.getElementById('reportContent').innerHTML += '<p style="text-align:center;color:#c0392b">تعذر تحميل بيانات الفنيين</p>';
+      document.getElementById('reportContent').innerHTML = '<p style="text-align:center;color:#c0392b">تعذر تحميل التقرير</p>';
     });
 }
 
