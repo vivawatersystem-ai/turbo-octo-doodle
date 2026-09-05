@@ -85,8 +85,6 @@
   <input type="text" id="newPhone" placeholder="01xxxxxxxxx">
   <label>اسم العميل (اختياري)</label>
   <input type="text" id="newName">
-  <label>المحافظة</label>
-  <select id="newGov"></select>
   <label>القسم</label>
   <select id="newDept" onchange="suggestEmployee()">
     <option value="سيلز">سيلز</option>
@@ -146,13 +144,6 @@ let currentRole = '';
 let allLeads = [];
 
 function populateStaticLists() {
-  const govSelect = document.getElementById('newGov');
-  GOVERNORATES.forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = g; opt.textContent = g;
-    govSelect.appendChild(opt);
-  });
-
   const statusFilter = document.getElementById('statusFilter');
   const allOpt = document.createElement('option');
   allOpt.value = ''; allOpt.textContent = 'كل الحالات';
@@ -215,7 +206,6 @@ function submitLead(force) {
     code: currentCode,
     phone: document.getElementById('newPhone').value.trim(),
     customerName: document.getElementById('newName').value.trim(),
-    governorate: document.getElementById('newGov').value,
     department: document.getElementById('newDept').value,
     employeeOverride: document.getElementById('newEmployee').value,
     notes: document.getElementById('newNotes').value.trim(),
@@ -433,6 +423,11 @@ function renderLeads(leads) {
         </select>
       </div>
       <div class="lead-row sub-block" style="display:block">
+        <label style="margin-top:0">المحافظة</label>
+        <select id="gov-${lead.rowNum}"></select>
+        <button class="secondary" onclick="saveGovernorate(${lead.rowNum})">حفظ المحافظة</button>
+      </div>
+      <div class="lead-row sub-block" style="display:block">
         <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
         <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
       </div>
@@ -454,10 +449,36 @@ function renderLeads(leads) {
       <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
     `;
     container.appendChild(div);
+    populateGovernorateSelect(lead.rowNum, lead.governorate);
     if (currentRole === 'admin') {
       populateReassignEmployees(lead.rowNum, lead.department, lead.employee);
     }
   });
+}
+
+function populateGovernorateSelect(rowNum, currentGov) {
+  const govSelect = document.getElementById(`gov-${rowNum}`);
+  if (!govSelect) return;
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = ''; emptyOpt.textContent = '— اختر —';
+  govSelect.appendChild(emptyOpt);
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    if (g === currentGov) opt.selected = true;
+    govSelect.appendChild(opt);
+  });
+}
+
+function saveGovernorate(rowNum) {
+  const val = document.getElementById(`gov-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate: val })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function populateReassignEmployees(rowNum, department, currentEmployee) {
