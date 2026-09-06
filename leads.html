@@ -124,7 +124,11 @@
 </div>
 
 <div class="card hidden" id="adminCard">
-  <h2>إضافة رقم جديد</h2>
+  <div class="lead-summary" onclick="toggleAddLeadForm()" style="display:flex;justify-content:space-between;align-items:center">
+    <h2 style="margin:0">➕ إضافة رقم جديد</h2>
+    <span id="alArrow">▾</span>
+  </div>
+  <div id="alFormBody" class="hidden">
   <label>رقم الواتساب</label>
   <input type="text" id="newPhone" placeholder="01xxxxxxxxx">
   <label>اسم العميل (اختياري)</label>
@@ -145,6 +149,7 @@
   </select>
   <button onclick="submitLead()">إضافة الرقم</button>
   <div id="addMsg"></div>
+  </div>
 </div>
 
 <div class="card hidden" id="listCard">
@@ -269,6 +274,18 @@ function setMsg(text, cls) {
   const el = document.getElementById('msg');
   el.textContent = text;
   el.className = cls;
+}
+
+function toggleAddLeadForm() {
+  const body = document.getElementById('alFormBody');
+  const arrow = document.getElementById('alArrow');
+  if (body.classList.contains('hidden')) {
+    body.classList.remove('hidden');
+    arrow.textContent = '▴';
+  } else {
+    body.classList.add('hidden');
+    arrow.textContent = '▾';
+  }
 }
 
 function toggleDirectDealForm() {
