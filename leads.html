@@ -187,6 +187,7 @@ const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق',
 let currentCode = '';
 let currentRole = '';
 let currentUserName = '';
+let currentDepartment = '';
 let allLeads = [];
 let expandedRows = new Set();
 
@@ -239,15 +240,25 @@ function login() {
       currentCode = code;
       currentRole = data.role;
       currentUserName = data.name;
+      currentDepartment = data.department || '';
       document.getElementById('loginCard').classList.add('hidden');
       document.getElementById('listCard').classList.remove('hidden');
       document.getElementById('directDealCard').classList.remove('hidden');
       document.getElementById('listTitle').textContent =
-        currentRole === 'admin' ? 'كل الأرقام' : `أرقام ${data.name}`;
+        (currentRole === 'admin' || currentRole === 'manager') ? `كل أرقام ${currentDepartment || ''}`.trim() : `أرقام ${data.name}`;
       if (currentRole === 'admin') {
-        document.getElementById('adminCard').classList.remove('hidden');
+        document.getElementById('listTitle').textContent = 'كل الأرقام';
         document.getElementById('adminToolsRow').classList.remove('hidden');
         document.getElementById('directDeptRow').classList.remove('hidden');
+      }
+      if (currentRole === 'admin' || currentRole === 'manager') {
+        document.getElementById('adminCard').classList.remove('hidden');
+      }
+      if (currentRole === 'manager') {
+        const deptSelect = document.getElementById('newDept');
+        deptSelect.value = currentDepartment;
+        deptSelect.disabled = true;
+        suggestEmployee();
       }
       loadLeads();
     })
@@ -601,7 +612,7 @@ function renderLeads(leads) {
           <b>${lead.customerName || 'بدون اسم'}</b>
           <span class="tag" style="margin-right:6px">📱 ${lead.phone}</span>
           ${lead.priority === 'مستعجل' ? '<span class="tag" style="background:#fee2e2;color:#991b1b">🔴</span>' : ''}
-          ${currentRole === 'admin' && isStale(lead) ? '<span class="tag" style="background:#fff3cd;color:#7a5b00">⚠️</span>' : ''}
+          ${(currentRole === 'admin' || currentRole === 'manager') && isStale(lead) ? '<span class="tag" style="background:#fff3cd;color:#7a5b00">⚠️</span>' : ''}
         </span>
         <span>
           <span class="status-badge ${statusClass}">${lead.status}</span>
@@ -658,16 +669,17 @@ function renderLeads(leads) {
           <input type="date" id="followup-${lead.rowNum}" value="${formatDateForInput(lead.followUpDate)}">
           <button class="secondary" onclick="saveFollowUp(${lead.rowNum})">حفظ تاريخ المتابعة</button>
         </div>
-        ${currentRole === 'admin' ? `
+        ${(currentRole === 'admin' || currentRole === 'manager') ? `
         <div class="lead-row sub-block" style="display:block">
           <label style="margin-top:0">تغيير القسم / الموظف</label>
-          <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})">
+          <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})" ${currentRole === 'manager' ? 'disabled' : ''}>
             <option value="سيلز" ${lead.department === 'سيلز' ? 'selected' : ''}>سيلز</option>
             <option value="صيانة" ${lead.department === 'صيانة' ? 'selected' : ''}>صيانة</option>
           </select>
           <select id="reEmp-${lead.rowNum}"></select>
           <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
-        </div>
+        </div>` : ''}
+        ${currentRole === 'admin' ? `
         <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
       </div>
     `;
@@ -676,7 +688,7 @@ function renderLeads(leads) {
     if (lead.status === 'تم الاتفاق') {
       populateDealGovSelect(lead.rowNum, lead.governorate);
     }
-    if (currentRole === 'admin') {
+    if (currentRole === 'admin' || currentRole === 'manager') {
       populateReassignEmployees(lead.rowNum, lead.department, lead.employee);
     }
   });
