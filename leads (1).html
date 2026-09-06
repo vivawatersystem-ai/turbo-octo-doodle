@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توزيع أرقام العملاء - Vivawatersystem</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: #f2f6f8;
+    margin: 0;
+    padding: 16px;
+    color: #1f2d3d;
+  }
+  .card {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 20px; text-align: center; color: #0d6e6e; }
+  h2 { font-size: 16px; color: #0d6e6e; margin-top: 0; }
+  label { display: block; margin: 10px 0 4px; font-size: 14px; font-weight: 600; }
+  input, select, textarea {
+    width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px;
+    font-size: 14px; background: #fafafa;
+  }
+  button {
+    margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 8px;
+    background: #0d6e6e; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer;
+  }
+  button:hover { background: #0a5757; }
+  button.secondary { background: #7a8a99; }
+  .lead {
+    border: 1px solid #e3e8ec; border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    background: #fbfdfd;
+  }
+  .lead-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 4px; gap: 8px; }
+  .lead-row b { color: #444; }
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
+  }
+  .s-جديد { background: #e0e7ff; color: #3730a3; }
+  .s-مهتم { background: #dbeafe; color: #1e40af; }
+  .s-متابعة { background: #fef3c7; color: #92400e; }
+  .s-تم_الاتفاق { background: #d1fae5; color: #065f46; }
+  .s-تم_التواصل { background: #e0e7ff; color: #3730a3; }
+  .s-محافظة { background: #f3e8ff; color: #6b21a8; }
+  .s-السعر_غالي { background: #ffe4d6; color: #9a3412; }
+  .s-رفض { background: #fee2e2; color: #991b1b; }
+  #msg { text-align: center; font-size: 14px; margin-top: 10px; min-height: 18px; }
+  .error { color: #c0392b; }
+  .success { color: #1e8449; }
+  .hidden { display: none !important; }
+  .tag { display:inline-block; background:#eef2f2; padding:2px 8px; border-radius:6px; font-size:12px; margin-right:4px;}
+  .wa-btn {
+    text-decoration: none; background: #25D366; color: #fff; padding: 4px 12px;
+    border-radius: 6px; font-size: 12px; font-weight: bold; white-space: nowrap;
+  }
+  .kpi-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .kpi { background:#eef6f6; color:#0d6e6e; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:20px; white-space: nowrap; }
+  .filters-row { display:flex; gap:8px; margin-bottom:12px; }
+  .filters-row input, .filters-row select { margin-top: 0; }
+  .admin-tools-row { display:flex; gap:8px; margin-bottom:12px; }
+  .sub-block { border-top:1px dashed #ddd; padding-top:8px; margin-top:8px; }
+  .lead-summary { cursor: pointer; padding: 2px 0; }
+  .lead-summary:hover { opacity: 0.85; }
+  .lead-details { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="card" id="loginCard">
+  <h1>💧 توزيع أرقام العملاء</h1>
+  <label>كود الموظف</label>
+  <input type="text" id="codeInput" placeholder="أدخل كودك" autocomplete="off">
+  <button onclick="login()">دخول</button>
+  <div id="msg"></div>
+</div>
+
+<div class="card hidden" id="directDealCard">
+  <h2>إضافة عميل مباشر (تم الاتفاق)</h2>
+  <p style="font-size:12px;color:#7a8a99;margin:0 0 10px">استخدمها لو العميل جاهز واتفقتوا معاه على طول من غير ما تعدي بيه على مراحل المتابعة العادية.</p>
+  <label>رقم الواتساب</label>
+  <input type="text" id="ddPhone" placeholder="01xxxxxxxxx">
+  <label>رقم موبايل 2 (اختياري)</label>
+  <input type="text" id="ddPhone2">
+  <label>اسم العميل</label>
+  <input type="text" id="ddName">
+  <label>المحافظة</label>
+  <select id="ddGov"></select>
+  <label>المنطقة</label>
+  <input type="text" id="ddArea" placeholder="المنطقة بالتفصيل">
+  <div id="directDeptRow" class="hidden">
+    <label>القسم</label>
+    <select id="ddDept">
+      <option value="سيلز">سيلز</option>
+      <option value="صيانة">صيانة</option>
+    </select>
+  </div>
+  <label>العنوان بالتفصيل</label>
+  <textarea id="ddAddress" rows="2"></textarea>
+  <label>المطلوب تنفيذه / تفاصيل الاتفاق</label>
+  <textarea id="ddRequirement" rows="2"></textarea>
+  <label>تاريخ التنفيذ المتفق عليه</label>
+  <input type="date" id="ddExecDate">
+  <label>نوع الجهاز</label>
+  <input type="text" id="ddDevice">
+  <label>السعر</label>
+  <input type="text" id="ddPrice">
+  <label>ملاحظات (اختياري)</label>
+  <textarea id="ddNotes" rows="2"></textarea>
+  <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
+  <div id="ddMsg"></div>
+</div>
+
+<div class="card hidden" id="adminCard">
+  <h2>إضافة رقم جديد</h2>
+  <label>رقم الواتساب</label>
+  <input type="text" id="newPhone" placeholder="01xxxxxxxxx">
+  <label>اسم العميل (اختياري)</label>
+  <input type="text" id="newName">
+  <label>القسم</label>
+  <select id="newDept" onchange="suggestEmployee()">
+    <option value="سيلز">سيلز</option>
+    <option value="صيانة">صيانة</option>
+  </select>
+  <label>الموظف المسؤول (يقترحه النظام تلقائي - تقدر تغيّره)</label>
+  <select id="newEmployee"></select>
+  <label>ملاحظات (اختياري)</label>
+  <textarea id="newNotes" rows="2"></textarea>
+  <label>الأولوية</label>
+  <select id="newPriority">
+    <option value="عادي">عادي</option>
+    <option value="مستعجل">مستعجل</option>
+  </select>
+  <button onclick="submitLead()">إضافة الرقم</button>
+  <div id="addMsg"></div>
+</div>
+
+<div class="card hidden" id="listCard">
+  <h2 id="listTitle">الأرقام</h2>
+  <div id="adminToolsRow" class="hidden admin-tools-row">
+    <button class="secondary" style="margin-top:0" onclick="toggleReport()">📊 تقرير الأداء</button>
+    <button class="secondary" style="margin-top:0" onclick="archiveNow()">🗄 أرشفة القديم</button>
+    <button class="secondary" style="margin-top:0" onclick="syncTechnicianTabs()">🔧 تحديث تابات الفنيين</button>
+  </div>
+  <div id="kpiBar" class="kpi-bar"></div>
+  <div class="filters-row">
+    <input type="text" id="searchInput" placeholder="بحث برقم أو اسم..." oninput="applyFilters()" style="flex:2">
+    <select id="statusFilter" onchange="applyFilters()" style="flex:1"></select>
+  </div>
+  <div id="leadsList"></div>
+</div>
+
+<div class="card hidden" id="reportCard">
+  <h2>تقرير الأداء</h2>
+  <div id="reportContent"></div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGN9ukGTQ4N9mP7G03U-l209HZwQq7Vp9f6p3khBe3OAFvv4A1QD9II8mMgX5THl1e/exec';
+
+const GOVERNORATES = [
+  'القاهرة','الجيزة','الإسكندرية','الدقهلية','البحر الأحمر','البحيرة','الفيوم',
+  'الغربية','الإسماعيلية','المنوفية','المنيا','القليوبية','الوادي الجديد','السويس',
+  'أسوان','أسيوط','بني سويف','بورسعيد','دمياط','الشرقية','جنوب سيناء','كفر الشيخ',
+  'مطروح','الأقصر','قنا','شمال سيناء','سوهاج'
+];
+
+const DEPT_EMPLOYEES = {
+  'سيلز': ['فاطمة'],
+  'صيانة': ['سندس', 'شهد', 'جنة']
+};
+
+const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق', 'تم التواصل', 'محافظة', 'السعر غالي', 'رفض'];
+
+let currentCode = '';
+let currentRole = '';
+let currentUserName = '';
+let allLeads = [];
+let expandedRows = new Set();
+
+function populateStaticLists() {
+  const statusFilter = document.getElementById('statusFilter');
+  const allOpt = document.createElement('option');
+  allOpt.value = ''; allOpt.textContent = 'كل الحالات';
+  statusFilter.appendChild(allOpt);
+  STATUSES.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    statusFilter.appendChild(opt);
+  });
+
+  const ddGovSelect = document.getElementById('ddGov');
+  const ddEmptyOpt = document.createElement('option');
+  ddEmptyOpt.value = ''; ddEmptyOpt.textContent = '— اختر —';
+  ddGovSelect.appendChild(ddEmptyOpt);
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    ddGovSelect.appendChild(opt);
+  });
+
+  suggestEmployee();
+}
+
+function suggestEmployee() {
+  const dept = document.getElementById('newDept').value;
+  const empSelect = document.getElementById('newEmployee');
+  empSelect.innerHTML = '';
+  (DEPT_EMPLOYEES[dept] || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    empSelect.appendChild(opt);
+  });
+}
+
+function login() {
+  const code = document.getElementById('codeInput').value.trim();
+  if (!code) return;
+  setMsg('جاري التحقق...', '');
+  fetch(`${SCRIPT_URL}?action=checkCode&code=${encodeURIComponent(code)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.valid) {
+        setMsg('كود غير صحيح', 'error');
+        return;
+      }
+      currentCode = code;
+      currentRole = data.role;
+      currentUserName = data.name;
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('listCard').classList.remove('hidden');
+      document.getElementById('directDealCard').classList.remove('hidden');
+      document.getElementById('listTitle').textContent =
+        currentRole === 'admin' ? 'كل الأرقام' : `أرقام ${data.name}`;
+      if (currentRole === 'admin') {
+        document.getElementById('adminCard').classList.remove('hidden');
+        document.getElementById('adminToolsRow').classList.remove('hidden');
+        document.getElementById('directDeptRow').classList.remove('hidden');
+      }
+      loadLeads();
+    })
+    .catch(() => setMsg('في مشكلة في الاتصال', 'error'));
+}
+
+function setMsg(text, cls) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = cls;
+}
+
+function submitDirectDeal() {
+  const phone = document.getElementById('ddPhone').value.trim();
+  if (!phone) {
+    document.getElementById('ddMsg').textContent = 'اكتب رقم الواتساب الأول';
+    document.getElementById('ddMsg').className = 'error';
+    return;
+  }
+  const payload = {
+    action: 'addDirectDeal',
+    code: currentCode,
+    phone: phone,
+    phone2: document.getElementById('ddPhone2').value.trim(),
+    customerName: document.getElementById('ddName').value.trim(),
+    governorate: document.getElementById('ddGov').value,
+    area: document.getElementById('ddArea').value.trim(),
+    addressDetails: document.getElementById('ddAddress').value.trim(),
+    agreementDetails: document.getElementById('ddRequirement').value.trim(),
+    executionDate: document.getElementById('ddExecDate').value,
+    deviceType: document.getElementById('ddDevice').value.trim(),
+    price: document.getElementById('ddPrice').value.trim(),
+    notes: document.getElementById('ddNotes').value.trim()
+  };
+  if (currentRole === 'admin') {
+    payload.department = document.getElementById('ddDept').value;
+  }
+  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('ddMsg').textContent = 'حصل خطأ: ' + data.error;
+        document.getElementById('ddMsg').className = 'error';
+        return;
+      }
+      document.getElementById('ddMsg').textContent = 'تمت إضافة العميل في تم الاتفاق';
+      document.getElementById('ddMsg').className = 'success';
+      ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice', 'ddNotes']
+        .forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('ddGov').value = '';
+    })
+    .catch(() => {
+      document.getElementById('ddMsg').textContent = 'في مشكلة في الاتصال';
+      document.getElementById('ddMsg').className = 'error';
+    });
+}
+
+function submitLead(force) {
+  const payload = {
+    action: 'addLead',
+    code: currentCode,
+    phone: document.getElementById('newPhone').value.trim(),
+    customerName: document.getElementById('newName').value.trim(),
+    department: document.getElementById('newDept').value,
+    employeeOverride: document.getElementById('newEmployee').value,
+    notes: document.getElementById('newNotes').value.trim(),
+    priority: document.getElementById('newPriority').value,
+    confirmDuplicate: !!force
+  };
+  if (!payload.phone) {
+    document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
+    document.getElementById('addMsg').className = 'error';
+    return;
+  }
+  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.duplicate) {
+        const ex = data.existingLead;
+        const exDate = ex.date ? new Date(ex.date).toLocaleDateString('ar-EG') : '';
+        const proceed = confirm(
+          `الرقم ده موجود قبل كده بتاريخ ${exDate} عند ${ex.employee} (${ex.department}) - الحالة: ${ex.status}.\nتحب تضيفه تاني؟`
+        );
+        if (proceed) submitLead(true);
+        return;
+      }
+      if (data.error) {
+        document.getElementById('addMsg').textContent = 'حصل خطأ: ' + data.error;
+        document.getElementById('addMsg').className = 'error';
+        return;
+      }
+      document.getElementById('addMsg').textContent = `تمت الإضافة، اتوزع على: ${data.assignedEmployee}`;
+      document.getElementById('addMsg').className = 'success';
+      document.getElementById('newPhone').value = '';
+      document.getElementById('newName').value = '';
+      document.getElementById('newNotes').value = '';
+      loadLeads();
+    })
+    .catch(() => {
+      document.getElementById('addMsg').textContent = 'في مشكلة في الاتصال';
+      document.getElementById('addMsg').className = 'error';
+    });
+}
+
+function loadLeads() {
+  fetch(`${SCRIPT_URL}?action=getLeads&code=${encodeURIComponent(currentCode)}`)
+    .then(r => r.json())
+    .then(data => {
+      allLeads = data.leads || [];
+      renderKPIs(allLeads);
+      applyFilters();
+    })
+    .catch(() => {});
+}
+
+function renderKPIs(leads) {
+  const container = document.getElementById('kpiBar');
+  const total = leads.length;
+  const counts = {};
+  STATUSES.forEach(s => (counts[s] = 0));
+  leads.forEach(l => { if (counts.hasOwnProperty(l.status)) counts[l.status]++; });
+  container.innerHTML =
+    `<span class="kpi">الإجمالي: ${total}</span>` +
+    STATUSES.filter(s => counts[s] > 0).map(s => `<span class="kpi">${s}: ${counts[s]}</span>`).join('');
+}
+
+function applyFilters() {
+  const searchTerm = document.getElementById('searchInput').value.trim();
+  const statusFilter = document.getElementById('statusFilter').value;
+  let filtered = allLeads;
+  if (statusFilter) {
+    filtered = filtered.filter(l => l.status === statusFilter);
+  }
+  if (searchTerm) {
+    filtered = filtered.filter(l =>
+      (l.phone && String(l.phone).includes(searchTerm)) ||
+      (l.customerName && String(l.customerName).includes(searchTerm))
+    );
+  }
+  renderLeads(sortLeads(filtered));
+}
+
+function sortLeads(leads) {
+  const sortByFollowUp = (arr) => {
+    const withDate = arr.filter(l => l.followUpDate);
+    const withoutDate = arr.filter(l => !l.followUpDate);
+    withDate.sort((a, b) => new Date(a.followUpDate) - new Date(b.followUpDate));
+    return [...withDate, ...withoutDate.slice().reverse()];
+  };
+  const urgent = leads.filter(l => l.priority === 'مستعجل');
+  const normal = leads.filter(l => l.priority !== 'مستعجل');
+  return [...sortByFollowUp(urgent), ...sortByFollowUp(normal)];
+}
+
+function isStale(lead) {
+  if (['تم الاتفاق', 'رفض'].indexOf(lead.status) !== -1) return false;
+  if (!lead.lastUpdated) return false;
+  const days = (new Date() - new Date(lead.lastUpdated)) / (1000 * 60 * 60 * 24);
+  return days >= 3;
+}
+
+function toWhatsAppNumber(phone) {
+  let digits = String(phone || '').replace(/[^0-9]/g, '');
+  if (digits.startsWith('0')) digits = '20' + digits.substring(1);
+  return digits;
+}
+
+function normalizePhoneJs(phone) {
+  return String(phone || '').replace(/[^0-9]/g, '');
+}
+
+function updateClosedDealExecuted(rowNum, executed) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateClosedDeal', code: currentCode, rowNum, executed })
+  })
+    .then(r => r.json())
+    .then(() => renderReport())
+    .catch(() => {});
+}
+
+function toggleReport() {
+  const card = document.getElementById('reportCard');
+  if (card.classList.contains('hidden')) {
+    renderReport();
+    card.classList.remove('hidden');
+  } else {
+    card.classList.add('hidden');
+  }
+}
+
+function renderReport() {
+  document.getElementById('reportContent').innerHTML = '<p style="text-align:center;color:#888">جاري التحميل...</p>';
+
+  Promise.all([
+    fetch(`${SCRIPT_URL}?action=getClosedDeals&code=${encodeURIComponent(currentCode)}`).then(r => r.json()),
+    fetch(`${SCRIPT_URL}?action=getWorkOrders&code=${encodeURIComponent(currentCode)}`).then(r => r.json())
+  ])
+    .then(([closedData, ordersData]) => {
+      const closedDeals = closedData.deals || [];
+      const orders = ordersData.orders || [];
+      const ordersByPhone = {};
+      orders.forEach(o => { ordersByPhone[normalizePhoneJs(o.phone1)] = o; });
+
+      const stats = {};
+      allLeads.forEach(l => {
+        if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
+        stats[l.employee].total++;
+      });
+      closedDeals.forEach(l => {
+        if (!stats[l.employee]) stats[l.employee] = { total: 0, closed: 0 };
+        stats[l.employee].total++;
+        if (l.executed !== 'لا') stats[l.employee].closed++;
+      });
+
+      const names = Object.keys(stats);
+      const summaryHtml = names.length === 0
+        ? '<p style="text-align:center;color:#888">مفيش بيانات لسه</p>'
+        : names.map(name => {
+            const s = stats[name];
+            const rate = s.total ? Math.round((s.closed / s.total) * 100) : 0;
+            return `<div class="lead-row"><b>${name}</b><span>${s.total} رقم — ${s.closed} صفقة — ${rate}%</span></div>`;
+          }).join('');
+
+      let detailHtml;
+      if (closedDeals.length === 0) {
+        detailHtml = '<p style="text-align:center;color:#888">مفيش صفقات مقفولة لسه</p>';
+      } else {
+        detailHtml = closedDeals.map(l => {
+          const order = ordersByPhone[normalizePhoneJs(l.phone)];
+          const technician = order && order.technician ? order.technician : 'لسه ملحددش';
+          const executed = [l.agreementDetails, l.deviceType].filter(Boolean).join(' — ') || '-';
+          const dateShown = l.executionDate ? formatDateForInput(l.executionDate) :
+            (l.lastUpdated ? new Date(l.lastUpdated).toLocaleDateString('ar-EG') : '-');
+          return `
+            <div class="lead" style="margin-bottom:8px">
+              <div class="lead-row"><b>${l.customerName || l.phone}</b><span>الموظف: ${l.employee}</span></div>
+              <div class="lead-row"><span>الفني: ${technician}</span><span>التاريخ: ${dateShown}</span></div>
+              <div class="lead-row"><span>المنفذ: ${executed}</span></div>
+              <div class="lead-row">
+                <span>تم التنفيذ فعليًا؟</span>
+                <select onchange="updateClosedDealExecuted(${l.rowNum}, this.value)">
+                  <option value="نعم" ${l.executed !== 'لا' ? 'selected' : ''}>نعم — تُحسب العمولة</option>
+                  <option value="لا" ${l.executed === 'لا' ? 'selected' : ''}>لا — متتحسبش العمولة</option>
+                </select>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      document.getElementById('reportContent').innerHTML =
+        `<h2 style="font-size:14px">ملخص لكل موظف</h2>${summaryHtml}` +
+        `<h2 style="font-size:14px;margin-top:16px">تفاصيل الصفقات المنفذة</h2>${detailHtml}`;
+    })
+    .catch(() => {
+      document.getElementById('reportContent').innerHTML = '<p style="text-align:center;color:#c0392b">تعذر تحميل التقرير</p>';
+    });
+}
+
+function viewLog(rowNum, phone) {
+  fetch(`${SCRIPT_URL}?action=getLog&code=${encodeURIComponent(currentCode)}&phone=${encodeURIComponent(phone)}`)
+    .then(r => r.json())
+    .then(data => {
+      const entries = data.log || [];
+      if (entries.length === 0) {
+        alert('مفيش سجل تغييرات لسه لهذا الرقم');
+        return;
+      }
+      const text = entries.map(e => {
+        const d = e.date ? new Date(e.date).toLocaleString('ar-EG') : '';
+        return `${d} — ${e.employee}: ${e.change}`;
+      }).join('\n');
+      alert(text);
+    })
+    .catch(() => alert('في مشكلة في جلب السجل'));
+}
+
+function syncTechnicianTabs() {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert(`تم تحديث تابات الفنيين (${data.syncedCount} صف)`);
+      } else {
+        alert('حصل خطأ: ' + (data.error || 'غير معروف'));
+      }
+    })
+    .catch(() => alert('في مشكلة في الاتصال'));
+}
+
+function archiveNow() {
+  if (!confirm('هيتم نقل الأرقام "تم الاتفاق" أو "رفض" الأقدم من 30 يوم لتبويب الأرشيف. تحب تكمل؟')) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'archiveNow', code: currentCode })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert(`تم أرشفة ${data.archivedCount} رقم`);
+        loadLeads();
+      } else {
+        alert('حصل خطأ: ' + (data.error || 'غير معروف'));
+      }
+    })
+    .catch(() => alert('في مشكلة في الاتصال'));
+}
+
+function formatDateForInput(val) {
+  if (!val) return '';
+  try {
+    const d = new Date(val);
+    if (isNaN(d)) return '';
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return '';
+  }
+}
+
+function renderLeads(leads) {
+  const container = document.getElementById('leadsList');
+  container.innerHTML = '';
+  if (leads.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#888">مفيش أرقام تطابق البحث</p>';
+    return;
+  }
+  leads.forEach(lead => {
+    const div = document.createElement('div');
+    div.className = 'lead';
+    const statusClass = 's-' + lead.status.replace(/ /g, '_');
+    const displayDate = lead.date ? new Date(lead.date).toLocaleDateString('ar-EG') : '';
+    const isExpanded = expandedRows.has(lead.rowNum);
+    div.innerHTML = `
+      <div class="lead-row lead-summary" onclick="toggleLeadDetails(${lead.rowNum})">
+        <span>
+          <b>${lead.customerName || 'بدون اسم'}</b>
+          <span class="tag" style="margin-right:6px">📱 ${lead.phone}</span>
+          ${lead.priority === 'مستعجل' ? '<span class="tag" style="background:#fee2e2;color:#991b1b">🔴</span>' : ''}
+          ${currentRole === 'admin' && isStale(lead) ? '<span class="tag" style="background:#fff3cd;color:#7a5b00">⚠️</span>' : ''}
+        </span>
+        <span>
+          <span class="status-badge ${statusClass}">${lead.status}</span>
+          <span id="arrow-${lead.rowNum}">${isExpanded ? '▴' : '▾'}</span>
+        </span>
+      </div>
+      <div id="details-${lead.rowNum}" class="lead-details ${isExpanded ? '' : 'hidden'}">
+        <div class="lead-row">
+          <a class="wa-btn" href="https://wa.me/${toWhatsAppNumber(lead.phone)}" target="_blank">فتح واتساب</a>
+        </div>
+        <div class="lead-row">
+          <span class="tag">📅 ${displayDate}</span>
+          <span class="tag">${lead.governorate || '-'}</span>
+          <span class="tag">${lead.department}</span>
+          <span class="tag">${lead.employee}</span>
+        </div>
+        <div class="lead-row">
+          <span class="status-badge ${statusClass}">${lead.status}</span>
+          <select onchange="changeStatus(${lead.rowNum}, this.value)">
+            ${STATUSES.map(s => `<option value="${s}" ${s === lead.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        ${lead.status === 'تم الاتفاق' ? `
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">المحافظة</label>
+          <select id="dealGov-${lead.rowNum}"></select>
+          <label>المنطقة</label>
+          <input type="text" id="area-${lead.rowNum}" placeholder="المنطقة بالتفصيل" value="${lead.area || ''}">
+          <label>العنوان بالتفصيل</label>
+          <textarea id="address-${lead.rowNum}" rows="2" placeholder="العنوان بالتفصيل...">${lead.addressDetails || ''}</textarea>
+          <label>تفاصيل الاتفاق مع العميل</label>
+          <textarea id="agreement-${lead.rowNum}" rows="2" placeholder="اللي اتفقتوا عليه...">${lead.agreementDetails || ''}</textarea>
+          <label>رقم موبايل 2 (اختياري)</label>
+          <input type="text" id="phone2-${lead.rowNum}" placeholder="رقم تاني للعميل" value="${lead.phone2 || ''}">
+          <label>تاريخ التنفيذ المتفق عليه</label>
+          <input type="date" id="execdate-${lead.rowNum}" value="${formatDateForInput(lead.executionDate)}">
+          <label>نوع الجهاز</label>
+          <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
+          <label>السعر</label>
+          <input type="text" id="price-${lead.rowNum}" placeholder="السعر المتفق عليه" value="${lead.price || ''}">
+          <button class="secondary" onclick="saveDealDetails(${lead.rowNum})">حفظ تفاصيل الاتفاق</button>
+        </div>` : ''}
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">المحافظة</label>
+          <select id="gov-${lead.rowNum}"></select>
+          <button class="secondary" onclick="saveGovernorate(${lead.rowNum})">حفظ المحافظة</button>
+        </div>
+        <div class="lead-row sub-block" style="display:block">
+          <textarea id="notes-${lead.rowNum}" data-status="${lead.status}" rows="2" placeholder="اكتب ملاحظة...">${lead.notes || ''}</textarea>
+          <button class="secondary" onclick="saveNotes(${lead.rowNum})">حفظ الملاحظة</button>
+        </div>
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">تاريخ المتابعة</label>
+          <input type="date" id="followup-${lead.rowNum}" value="${formatDateForInput(lead.followUpDate)}">
+          <button class="secondary" onclick="saveFollowUp(${lead.rowNum})">حفظ تاريخ المتابعة</button>
+        </div>
+        ${currentRole === 'admin' ? `
+        <div class="lead-row sub-block" style="display:block">
+          <label style="margin-top:0">تغيير القسم / الموظف</label>
+          <select id="reDept-${lead.rowNum}" onchange="updateReassignEmployees(${lead.rowNum})">
+            <option value="سيلز" ${lead.department === 'سيلز' ? 'selected' : ''}>سيلز</option>
+            <option value="صيانة" ${lead.department === 'صيانة' ? 'selected' : ''}>صيانة</option>
+          </select>
+          <select id="reEmp-${lead.rowNum}"></select>
+          <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
+        </div>
+        <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
+      </div>
+    `;
+    container.appendChild(div);
+    populateGovernorateSelect(lead.rowNum, lead.governorate);
+    if (lead.status === 'تم الاتفاق') {
+      populateDealGovSelect(lead.rowNum, lead.governorate);
+    }
+    if (currentRole === 'admin') {
+      populateReassignEmployees(lead.rowNum, lead.department, lead.employee);
+    }
+  });
+}
+
+function toggleLeadDetails(rowNum) {
+  const details = document.getElementById(`details-${rowNum}`);
+  const arrow = document.getElementById(`arrow-${rowNum}`);
+  if (!details) return;
+  if (details.classList.contains('hidden')) {
+    details.classList.remove('hidden');
+    expandedRows.add(rowNum);
+    if (arrow) arrow.textContent = '▴';
+  } else {
+    details.classList.add('hidden');
+    expandedRows.delete(rowNum);
+    if (arrow) arrow.textContent = '▾';
+  }
+}
+
+function populateDealGovSelect(rowNum, currentGov) {
+  const govSelect = document.getElementById(`dealGov-${rowNum}`);
+  if (!govSelect) return;
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = ''; emptyOpt.textContent = '— اختر —';
+  govSelect.appendChild(emptyOpt);
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    if (g === currentGov) opt.selected = true;
+    govSelect.appendChild(opt);
+  });
+}
+
+function populateGovernorateSelect(rowNum, currentGov) {
+  const govSelect = document.getElementById(`gov-${rowNum}`);
+  if (!govSelect) return;
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = ''; emptyOpt.textContent = '— اختر —';
+  govSelect.appendChild(emptyOpt);
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    if (g === currentGov) opt.selected = true;
+    govSelect.appendChild(opt);
+  });
+}
+
+function saveGovernorate(rowNum) {
+  const val = document.getElementById(`gov-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate: val })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function populateReassignEmployees(rowNum, department, currentEmployee) {
+  const empSelect = document.getElementById(`reEmp-${rowNum}`);
+  if (!empSelect) return;
+  empSelect.innerHTML = '';
+  (DEPT_EMPLOYEES[department] || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    if (name === currentEmployee) opt.selected = true;
+    empSelect.appendChild(opt);
+  });
+}
+
+function updateReassignEmployees(rowNum) {
+  const dept = document.getElementById(`reDept-${rowNum}`).value;
+  populateReassignEmployees(rowNum, dept, null);
+}
+
+function reassignLead(rowNum) {
+  const newDepartment = document.getElementById(`reDept-${rowNum}`).value;
+  const newEmployee = document.getElementById(`reEmp-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function saveDealDetails(rowNum) {
+  const governorate = document.getElementById(`dealGov-${rowNum}`).value;
+  const area = document.getElementById(`area-${rowNum}`).value;
+  const addressDetails = document.getElementById(`address-${rowNum}`).value;
+  const agreementDetails = document.getElementById(`agreement-${rowNum}`).value;
+  const phone2 = document.getElementById(`phone2-${rowNum}`).value;
+  const executionDate = document.getElementById(`execdate-${rowNum}`).value;
+  const deviceType = document.getElementById(`device-${rowNum}`).value;
+  const price = document.getElementById(`price-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function saveNotes(rowNum) {
+  const textarea = document.getElementById(`notes-${rowNum}`);
+  const status = textarea.dataset.status;
+  const notes = textarea.value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function saveFollowUp(rowNum) {
+  const val = document.getElementById(`followup-${rowNum}`).value;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, followUpDate: val })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+function changeStatus(rowNum, newStatus) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status: newStatus })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
+}
+
+populateStaticLists();
+</script>
+</body>
+</html>
