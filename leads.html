@@ -83,8 +83,12 @@
 </div>
 
 <div class="card hidden" id="directDealCard">
-  <h2>إضافة عميل مباشر (تم الاتفاق)</h2>
-  <p style="font-size:12px;color:#7a8a99;margin:0 0 10px">استخدمها لو العميل جاهز واتفقتوا معاه على طول من غير ما تعدي بيه على مراحل المتابعة العادية.</p>
+  <div class="lead-summary" onclick="toggleDirectDealForm()" style="display:flex;justify-content:space-between;align-items:center">
+    <h2 style="margin:0">➕ إضافة عميل مباشر (تم الاتفاق)</h2>
+    <span id="ddArrow">▾</span>
+  </div>
+  <div id="ddFormBody" class="hidden">
+  <p style="font-size:12px;color:#7a8a99;margin:10px 0">استخدمها لو العميل جاهز واتفقتوا معاه على طول من غير ما تعدي بيه على مراحل المتابعة العادية.</p>
   <label>رقم الواتساب</label>
   <input type="text" id="ddPhone" placeholder="01xxxxxxxxx">
   <label>رقم موبايل 2 (اختياري)</label>
@@ -116,6 +120,7 @@
   <textarea id="ddNotes" rows="2"></textarea>
   <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
   <div id="ddMsg"></div>
+  </div>
 </div>
 
 <div class="card hidden" id="adminCard">
@@ -253,6 +258,18 @@ function setMsg(text, cls) {
   const el = document.getElementById('msg');
   el.textContent = text;
   el.className = cls;
+}
+
+function toggleDirectDealForm() {
+  const body = document.getElementById('ddFormBody');
+  const arrow = document.getElementById('ddArrow');
+  if (body.classList.contains('hidden')) {
+    body.classList.remove('hidden');
+    arrow.textContent = '▴';
+  } else {
+    body.classList.add('hidden');
+    arrow.textContent = '▾';
+  }
 }
 
 function submitDirectDeal() {
