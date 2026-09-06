@@ -497,7 +497,11 @@ function renderLeads(leads) {
         </div>
         ${lead.status === 'تم الاتفاق' ? `
         <div class="lead-row sub-block" style="display:block">
-          <label style="margin-top:0">العنوان بالتفصيل</label>
+          <label style="margin-top:0">المحافظة</label>
+          <select id="dealGov-${lead.rowNum}"></select>
+          <label>المنطقة</label>
+          <input type="text" id="area-${lead.rowNum}" placeholder="المنطقة بالتفصيل" value="${lead.area || ''}">
+          <label>العنوان بالتفصيل</label>
           <textarea id="address-${lead.rowNum}" rows="2" placeholder="العنوان بالتفصيل...">${lead.addressDetails || ''}</textarea>
           <label>تفاصيل الاتفاق مع العميل</label>
           <textarea id="agreement-${lead.rowNum}" rows="2" placeholder="اللي اتفقتوا عليه...">${lead.agreementDetails || ''}</textarea>
@@ -540,6 +544,9 @@ function renderLeads(leads) {
     `;
     container.appendChild(div);
     populateGovernorateSelect(lead.rowNum, lead.governorate);
+    if (lead.status === 'تم الاتفاق') {
+      populateDealGovSelect(lead.rowNum, lead.governorate);
+    }
     if (currentRole === 'admin') {
       populateReassignEmployees(lead.rowNum, lead.department, lead.employee);
     }
@@ -559,6 +566,20 @@ function toggleLeadDetails(rowNum) {
     expandedRows.delete(rowNum);
     if (arrow) arrow.textContent = '▾';
   }
+}
+
+function populateDealGovSelect(rowNum, currentGov) {
+  const govSelect = document.getElementById(`dealGov-${rowNum}`);
+  if (!govSelect) return;
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = ''; emptyOpt.textContent = '— اختر —';
+  govSelect.appendChild(emptyOpt);
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    if (g === currentGov) opt.selected = true;
+    govSelect.appendChild(opt);
+  });
 }
 
 function populateGovernorateSelect(rowNum, currentGov) {
@@ -616,6 +637,8 @@ function reassignLead(rowNum) {
 }
 
 function saveDealDetails(rowNum) {
+  const governorate = document.getElementById(`dealGov-${rowNum}`).value;
+  const area = document.getElementById(`area-${rowNum}`).value;
   const addressDetails = document.getElementById(`address-${rowNum}`).value;
   const agreementDetails = document.getElementById(`agreement-${rowNum}`).value;
   const phone2 = document.getElementById(`phone2-${rowNum}`).value;
@@ -624,7 +647,7 @@ function saveDealDetails(rowNum) {
   const price = document.getElementById(`price-${rowNum}`).value;
   fetch(SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
   })
     .then(r => r.json())
     .then(() => loadLeads())
