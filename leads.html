@@ -82,6 +82,42 @@
   <div id="msg"></div>
 </div>
 
+<div class="card hidden" id="directDealCard">
+  <h2>إضافة عميل مباشر (تم الاتفاق)</h2>
+  <p style="font-size:12px;color:#7a8a99;margin:0 0 10px">استخدمها لو العميل جاهز واتفقتوا معاه على طول من غير ما تعدي بيه على مراحل المتابعة العادية.</p>
+  <label>رقم الواتساب</label>
+  <input type="text" id="ddPhone" placeholder="01xxxxxxxxx">
+  <label>رقم موبايل 2 (اختياري)</label>
+  <input type="text" id="ddPhone2">
+  <label>اسم العميل</label>
+  <input type="text" id="ddName">
+  <label>المحافظة</label>
+  <select id="ddGov"></select>
+  <label>المنطقة</label>
+  <input type="text" id="ddArea" placeholder="المنطقة بالتفصيل">
+  <div id="directDeptRow" class="hidden">
+    <label>القسم</label>
+    <select id="ddDept">
+      <option value="سيلز">سيلز</option>
+      <option value="صيانة">صيانة</option>
+    </select>
+  </div>
+  <label>العنوان بالتفصيل</label>
+  <textarea id="ddAddress" rows="2"></textarea>
+  <label>المطلوب تنفيذه / تفاصيل الاتفاق</label>
+  <textarea id="ddRequirement" rows="2"></textarea>
+  <label>تاريخ التنفيذ المتفق عليه</label>
+  <input type="date" id="ddExecDate">
+  <label>نوع الجهاز</label>
+  <input type="text" id="ddDevice">
+  <label>السعر</label>
+  <input type="text" id="ddPrice">
+  <label>ملاحظات (اختياري)</label>
+  <textarea id="ddNotes" rows="2"></textarea>
+  <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
+  <div id="ddMsg"></div>
+</div>
+
 <div class="card hidden" id="adminCard">
   <h2>إضافة رقم جديد</h2>
   <label>رقم الواتساب</label>
@@ -145,6 +181,7 @@ const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق',
 
 let currentCode = '';
 let currentRole = '';
+let currentUserName = '';
 let allLeads = [];
 let expandedRows = new Set();
 
@@ -157,6 +194,16 @@ function populateStaticLists() {
     const opt = document.createElement('option');
     opt.value = s; opt.textContent = s;
     statusFilter.appendChild(opt);
+  });
+
+  const ddGovSelect = document.getElementById('ddGov');
+  const ddEmptyOpt = document.createElement('option');
+  ddEmptyOpt.value = ''; ddEmptyOpt.textContent = '— اختر —';
+  ddGovSelect.appendChild(ddEmptyOpt);
+  GOVERNORATES.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    ddGovSelect.appendChild(opt);
   });
 
   suggestEmployee();
@@ -186,13 +233,16 @@ function login() {
       }
       currentCode = code;
       currentRole = data.role;
+      currentUserName = data.name;
       document.getElementById('loginCard').classList.add('hidden');
       document.getElementById('listCard').classList.remove('hidden');
+      document.getElementById('directDealCard').classList.remove('hidden');
       document.getElementById('listTitle').textContent =
         currentRole === 'admin' ? 'كل الأرقام' : `أرقام ${data.name}`;
       if (currentRole === 'admin') {
         document.getElementById('adminCard').classList.remove('hidden');
         document.getElementById('adminToolsRow').classList.remove('hidden');
+        document.getElementById('directDeptRow').classList.remove('hidden');
       }
       loadLeads();
     })
@@ -203,6 +253,51 @@ function setMsg(text, cls) {
   const el = document.getElementById('msg');
   el.textContent = text;
   el.className = cls;
+}
+
+function submitDirectDeal() {
+  const phone = document.getElementById('ddPhone').value.trim();
+  if (!phone) {
+    document.getElementById('ddMsg').textContent = 'اكتب رقم الواتساب الأول';
+    document.getElementById('ddMsg').className = 'error';
+    return;
+  }
+  const payload = {
+    action: 'addDirectDeal',
+    code: currentCode,
+    phone: phone,
+    phone2: document.getElementById('ddPhone2').value.trim(),
+    customerName: document.getElementById('ddName').value.trim(),
+    governorate: document.getElementById('ddGov').value,
+    area: document.getElementById('ddArea').value.trim(),
+    addressDetails: document.getElementById('ddAddress').value.trim(),
+    agreementDetails: document.getElementById('ddRequirement').value.trim(),
+    executionDate: document.getElementById('ddExecDate').value,
+    deviceType: document.getElementById('ddDevice').value.trim(),
+    price: document.getElementById('ddPrice').value.trim(),
+    notes: document.getElementById('ddNotes').value.trim()
+  };
+  if (currentRole === 'admin') {
+    payload.department = document.getElementById('ddDept').value;
+  }
+  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('ddMsg').textContent = 'حصل خطأ: ' + data.error;
+        document.getElementById('ddMsg').className = 'error';
+        return;
+      }
+      document.getElementById('ddMsg').textContent = 'تمت إضافة العميل في تم الاتفاق';
+      document.getElementById('ddMsg').className = 'success';
+      ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice', 'ddNotes']
+        .forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('ddGov').value = '';
+    })
+    .catch(() => {
+      document.getElementById('ddMsg').textContent = 'في مشكلة في الاتصال';
+      document.getElementById('ddMsg').className = 'error';
+    });
 }
 
 function submitLead(force) {
