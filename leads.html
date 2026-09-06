@@ -158,6 +158,7 @@
     <button class="secondary" style="margin-top:0" onclick="toggleReport()">📊 تقرير الأداء</button>
     <button class="secondary" style="margin-top:0" onclick="archiveNow()">🗄 أرشفة القديم</button>
     <button class="secondary" style="margin-top:0" onclick="syncTechnicianTabs()">🔧 تحديث تابات الفنيين</button>
+    <button class="secondary" style="margin-top:0" onclick="setupTechDropdown()">⚙️ إعداد دروب داون الفنيين</button>
   </div>
   <div id="kpiBar" class="kpi-bar"></div>
   <div class="filters-row">
@@ -563,6 +564,22 @@ function viewLog(rowNum, phone) {
       alert(text);
     })
     .catch(() => alert('في مشكلة في جلب السجل'));
+}
+
+function setupTechDropdown() {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'setupTechDropdown', code: currentCode })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert('اتظبط الدروب داون. روح تبويب "قائمة الفنيين" وضيف/امسح أسماء الفنيين براحتك.');
+      } else {
+        alert('حصل خطأ: ' + (data.error || 'غير معروف'));
+      }
+    })
+    .catch(() => alert('في مشكلة في الاتصال'));
 }
 
 function syncTechnicianTabs() {
