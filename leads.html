@@ -111,6 +111,7 @@
   <div id="adminToolsRow" class="hidden admin-tools-row">
     <button class="secondary" style="margin-top:0" onclick="toggleReport()">📊 تقرير الأداء</button>
     <button class="secondary" style="margin-top:0" onclick="archiveNow()">🗄 أرشفة القديم</button>
+    <button class="secondary" style="margin-top:0" onclick="syncTechnicianTabs()">🔧 تحديث تابات الفنيين</button>
   </div>
   <div id="kpiBar" class="kpi-bar"></div>
   <div class="filters-row">
@@ -422,6 +423,22 @@ function viewLog(rowNum, phone) {
       alert(text);
     })
     .catch(() => alert('في مشكلة في جلب السجل'));
+}
+
+function syncTechnicianTabs() {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        alert(`تم تحديث تابات الفنيين (${data.syncedCount} صف)`);
+      } else {
+        alert('حصل خطأ: ' + (data.error || 'غير معروف'));
+      }
+    })
+    .catch(() => alert('في مشكلة في الاتصال'));
 }
 
 function archiveNow() {
