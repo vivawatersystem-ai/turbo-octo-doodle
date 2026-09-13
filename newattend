@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viva Water Systems - نظام الحضور والإنصراف</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background-color: #f0f4f8; color: #333; text-align: center; padding: 20px; }
+        .container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { background-color: #0056b3; color: white; border: none; padding: 12px 20px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #004494; }
+        #status { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Viva Water Systems</h2>
+        <p>تسجيل الحضور والانصراف الآمن</p>
+        
+        <input type="text" id="employeeName" placeholder="أدخل اسمك ثلاثي">
+        <button onclick="checkIn()">تسجيل الحضور</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // إحداثيات مقر الشركة
+        const companyLat = 29.991229;
+        const companyLng = 31.152391;
+        const allowedRadius = 30; // مسافة السماح بالمتر
+        
+        // ضع هنا رابط الـ Web App الذي نسخته من Google Apps Script
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzff7gpxAIMxU25lThq83tHoB5UUgkgALqL4gh8pFsySm9JGRb7NeJbcAznVDqy3F-qYQ/exec';
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function checkIn() {
+            const name = document.getElementById('employeeName').value;
+            const statusDiv = document.getElementById('status');
+
+            if (!name) {
+                statusDiv.style.color = 'red';
+                statusDiv.innerText = 'الرجاء إدخال اسم الموظف أولاً!';
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                statusDiv.style.color = 'red';
+                statusDiv.innerText = 'متصفحك لا يدعم تحديد الموقع الجغرافي.';
+                return;
+            }
+
+            statusDiv.style.color = '#555';
+            statusDiv.innerText = 'جاري التحقق من موقعك داخل الشركة...';
+
+            navigator.geolocation.getCurrentPosition((position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const distance = calculateDistance(userLat, userLng, companyLat, companyLng);
+
+                if (distance <= allowedRadius) {
+                    statusDiv.style.color = 'green';
+                    statusDiv.innerText = `جاري حفظ حضورك يا ${name}...`;
+
+                    // إرسال البيانات إلى Google Sheets
+                    fetch(scriptURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name })
+                    }).then(() => {
+                        statusDiv.style.color = 'green';
+                        statusDiv.innerText = `مرحباً بك يا ${name}! تم تسجيل حضورك وحفظه بنجاح.`;
+                    }).catch(error => {
+                        statusDiv.style.color = 'red';
+                        statusDiv.innerText = 'حدث خطأ أثناء الاتصال بقاعدة البيانات.';
+                    });
+
+                } else {
+                    statusDiv.style.color = 'red';
+                    statusDiv.innerText = `عذراً يا ${name}، أنت خارج مقر الشركة (${Math.round(distance)} متر). يجب التواجد بالمقر لتسجيل الحضور.`;
+                }
+            }, (error) => {
+                statusDiv.style.color = 'red';
+                statusDiv.innerText = 'يرجى السماح للهاتف بتحديد الموقع (GPS) لتسجيل الحضور.';
+            }, { enableHighAccuracy: true });
+        }
+    </script>
+
+</body>
+</html>
