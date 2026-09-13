@@ -116,6 +116,8 @@
   <input type="text" id="ddDevice">
   <label>السعر</label>
   <input type="text" id="ddPrice">
+  <label>ملاحظات (اختياري)</label>
+  <textarea id="ddNotes" rows="2"></textarea>
   <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
   <div id="ddMsg"></div>
   </div>
@@ -183,7 +185,7 @@ const GOVERNORATES = [
 
 const DEPT_EMPLOYEES = {
   'سيلز': ['فاطمة'],
-  'صيانة': ['سندس', 'شهد', 'جنة']
+  'صيانة': ['سندس', 'شهد', 'جنة', 'رودينا']
 };
 
 const STATUSES = ['جديد', 'مهتم', 'متابعة', 'تم الاتفاق', 'تم التواصل', 'محافظة', 'السعر غالي', 'رفض'];
@@ -318,7 +320,8 @@ function submitDirectDeal() {
     agreementDetails: document.getElementById('ddRequirement').value.trim(),
     executionDate: document.getElementById('ddExecDate').value,
     deviceType: document.getElementById('ddDevice').value.trim(),
-    price: document.getElementById('ddPrice').value.trim()
+    price: document.getElementById('ddPrice').value.trim(),
+    notes: document.getElementById('ddNotes').value.trim()
   };
   if (currentRole === 'admin') {
     payload.department = document.getElementById('ddDept').value;
@@ -333,7 +336,7 @@ function submitDirectDeal() {
       }
       document.getElementById('ddMsg').textContent = 'تمت إضافة العميل في تم الاتفاق';
       document.getElementById('ddMsg').className = 'success';
-      ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice']
+      ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice', 'ddNotes']
         .forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('ddGov').value = '';
     })
