@@ -35,6 +35,7 @@
   }
   button:hover { background: #0a5757; }
   button.secondary { background: #7a8a99; }
+  button:disabled { background: #b7c2c2; cursor: not-allowed; }
   .lead {
     border: 1px solid #e3e8ec; border-radius: 10px; padding: 12px; margin-bottom: 10px;
     background: #fbfdfd;
@@ -117,7 +118,7 @@
   <input type="text" id="ddDevice">
   <label>السعر</label>
   <input type="text" id="ddPrice">
-  <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
+  <button onclick="submitDirectDeal(this)">إضافة العميل (تم الاتفاق)</button>
   <div id="ddMsg"></div>
   </div>
 </div>
@@ -146,7 +147,7 @@
     <option value="عادي">عادي</option>
     <option value="مستعجل">مستعجل</option>
   </select>
-  <button onclick="submitLead()">إضافة الرقم</button>
+  <button onclick="submitLead(false, this)">إضافة الرقم</button>
   <div id="addMsg"></div>
   </div>
 </div>
@@ -299,11 +300,17 @@ function toggleDirectDealForm() {
   }
 }
 
-function submitDirectDeal() {
+function submitDirectDeal(btn) {
+  if (btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'جاري الحفظ...';
+  }
   const phone = document.getElementById('ddPhone').value.trim();
   if (!phone) {
     document.getElementById('ddMsg').textContent = 'اكتب رقم الواتساب الأول';
     document.getElementById('ddMsg').className = 'error';
+    if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
     return;
   }
   const payload = {
@@ -329,6 +336,7 @@ function submitDirectDeal() {
       if (data.error) {
         document.getElementById('ddMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('ddMsg').className = 'error';
+        if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
         return;
       }
       document.getElementById('ddMsg').textContent = 'تمت إضافة العميل في تم الاتفاق';
@@ -336,14 +344,21 @@ function submitDirectDeal() {
       ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice']
         .forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('ddGov').value = '';
+      if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
     })
     .catch(() => {
       document.getElementById('ddMsg').textContent = 'في مشكلة في الاتصال';
       document.getElementById('ddMsg').className = 'error';
+      if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
     });
 }
 
-function submitLead(force) {
+function submitLead(force, btn) {
+  if (btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'جاري الإضافة...';
+  }
   const payload = {
     action: 'addLead',
     code: currentCode,
@@ -358,6 +373,7 @@ function submitLead(force) {
   if (!payload.phone) {
     document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
     document.getElementById('addMsg').className = 'error';
+    if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
     return;
   }
   fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
@@ -369,12 +385,17 @@ function submitLead(force) {
         const proceed = confirm(
           `الرقم ده موجود قبل كده بتاريخ ${exDate} عند ${ex.employee} (${ex.department}) - الحالة: ${ex.status}.\nتحب تضيفه تاني؟`
         );
-        if (proceed) submitLead(true);
+        if (proceed) {
+          submitLead(true, btn);
+        } else if (btn) {
+          btn.disabled = false; btn.textContent = 'إضافة الرقم';
+        }
         return;
       }
       if (data.error) {
         document.getElementById('addMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('addMsg').className = 'error';
+        if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
         return;
       }
       document.getElementById('addMsg').textContent = `تمت الإضافة، اتوزع على: ${data.assignedEmployee}`;
@@ -382,11 +403,13 @@ function submitLead(force) {
       document.getElementById('newPhone').value = '';
       document.getElementById('newName').value = '';
       document.getElementById('newNotes').value = '';
+      if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
       loadLeads();
     })
     .catch(() => {
       document.getElementById('addMsg').textContent = 'في مشكلة في الاتصال';
       document.getElementById('addMsg').className = 'error';
+      if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
     });
 }
 
