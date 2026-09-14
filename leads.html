@@ -546,7 +546,7 @@ function renderReport() {
 }
 
 function syncTechnicianTabs() {
-  if (!confirm("هل تريد تحديث وإنشاء تابات الفنيين بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
+  if (!confirm("هل تريد تحديث وإنشاء تابات الفنيين والتحصيل بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
   fetch(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
@@ -554,7 +554,7 @@ function syncTechnicianTabs() {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        alert(`تم إنشاء وتحديث تابات الفنيين بنجاح (${data.count} أمر شغل تم توزيعه)`);
+        alert(`تم إنشاء وتحديث تابات الفنيين والتحصيل بنجاح (${data.count} أمر شغل تم توزيعه)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
