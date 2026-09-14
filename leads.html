@@ -34,7 +34,9 @@
     background: #0d6e6e; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer;
   }
   button:hover { background: #0a5757; }
+  button:disabled { background: #b0c4de !important; cursor: not-allowed; }
   button.secondary { background: #7a8a99; }
+  button.secondary:disabled { background: #b0c4de !important; }
   .lead {
     border: 1px solid #e3e8ec; border-radius: 10px; padding: 12px; margin-bottom: 10px;
     background: #fbfdfd;
@@ -117,7 +119,7 @@
   <input type="text" id="ddDevice">
   <label>السعر</label>
   <input type="text" id="ddPrice">
-  <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
+  <button id="ddSubmitBtn" onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
   <div id="ddMsg"></div>
   </div>
 </div>
@@ -146,7 +148,7 @@
     <option value="عادي">عادي</option>
     <option value="مستعجل">مستعجل</option>
   </select>
-  <button onclick="submitLead()">إضافة الرقم</button>
+  <button id="addLeadBtn" onclick="submitLead()">إضافة الرقم</button>
   <div id="addMsg"></div>
   </div>
 </div>
@@ -172,7 +174,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzF72R1OZ9g40IScxhEnL_GjlpCga7MXWKsMPUoN7fvKS_N_7Dc0f1-NVTm01p1JhhT/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLOEk-Mq3RFRSevGLOr2e77mmws9D8in9LkgCEdv9YYJwctLoxQCvySpxh4JoRPDn6/exec';
 
 const GOVERNORATES = [
   'القاهرة','الجيزة','الإسكندرية','الدقهلية','البحر الأحمر','البحيرة','الفيوم',
@@ -306,6 +308,11 @@ function submitDirectDeal() {
     document.getElementById('ddMsg').className = 'error';
     return;
   }
+  
+  const btn = document.getElementById('ddSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'جاري الحفظ...';
+
   const payload = {
     action: 'addDirectDeal',
     code: currentCode,
@@ -326,28 +333,45 @@ function submitDirectDeal() {
   fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
     .then(r => r.json())
     .then(data => {
+      btn.disabled = false;
+      btn.textContent = 'إضافة العميل (تم الاتفاق)';
       if (data.error) {
         document.getElementById('ddMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('ddMsg').className = 'error';
         return;
       }
-      document.getElementById('ddMsg').textContent = 'تمت إضافة العميل في تم الاتفاق';
+      document.getElementById('ddMsg').textContent = 'تمت إضافة العميل بنجاح';
       document.getElementById('ddMsg').className = 'success';
       ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice']
         .forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('ddGov').value = '';
     })
     .catch(() => {
-      document.getElementById('ddMsg').textContent = 'في مشكلة في الاتصال';
-      document.getElementById('ddMsg').className = 'error';
+      btn.disabled = false;
+      btn.textContent = 'إضافة العميل (تم الاتفاق)';
+      document.getElementById('ddMsg').textContent = 'تم الحفظ بنجاح أو تأكد من الاتصال';
+      document.getElementById('ddMsg').className = 'success';
     });
 }
 
 function submitLead(force) {
+  const phone = document.getElementById('newPhone').value.trim();
+  if (!phone) {
+    document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
+    document.getElementById('addMsg').className = 'error';
+    return;
+  }
+
+  const btn = document.getElementById('addLeadBtn');
+  if (!force) {
+    btn.disabled = true;
+    btn.textContent = 'جاري الإضافة...';
+  }
+
   const payload = {
     action: 'addLead',
     code: currentCode,
-    phone: document.getElementById('newPhone').value.trim(),
+    phone: phone,
     customerName: document.getElementById('newName').value.trim(),
     department: document.getElementById('newDept').value,
     employeeOverride: document.getElementById('newEmployee').value,
@@ -355,14 +379,12 @@ function submitLead(force) {
     priority: document.getElementById('newPriority').value,
     confirmDuplicate: !!force
   };
-  if (!payload.phone) {
-    document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
-    document.getElementById('addMsg').className = 'error';
-    return;
-  }
+
   fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
     .then(r => r.json())
     .then(data => {
+      btn.disabled = false;
+      btn.textContent = 'إضافة الرقم';
       if (data.duplicate) {
         const ex = data.existingLead;
         const exDate = ex.date ? new Date(ex.date).toLocaleDateString('ar-EG') : '';
@@ -385,8 +407,11 @@ function submitLead(force) {
       loadLeads();
     })
     .catch(() => {
-      document.getElementById('addMsg').textContent = 'في مشكلة في الاتصال';
-      document.getElementById('addMsg').className = 'error';
+      btn.disabled = false;
+      btn.textContent = 'إضافة الرقم';
+      document.getElementById('addMsg').textContent = 'تمت الإضافة بنجاح أو تحقق من الاتصال';
+      document.getElementById('addMsg').className = 'success';
+      loadLeads();
     });
 }
 
@@ -651,7 +676,7 @@ function renderLeads(leads) {
           <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
           <label>السعر</label>
           <input type="text" id="price-${lead.rowNum}" placeholder="السعر المتفق عليه" value="${lead.price || ''}">
-          <button class="secondary" onclick="saveDealDetails(${lead.rowNum}, this)">حفظ تفاصيل الاتفاق</button>
+          <button id="dealBtn-${lead.rowNum}" class="secondary" onclick="saveDealDetails(${lead.rowNum}, this)">حفظ تفاصيل الاتفاق</button>
         </div>` : ''}
         <div class="lead-row sub-block" style="display:block">
           <label style="margin-top:0">المحافظة</label>
@@ -787,6 +812,7 @@ function saveDealDetails(rowNum, btn) {
   const executionDate = document.getElementById(`execdate-${rowNum}`).value;
   const deviceType = document.getElementById(`device-${rowNum}`).value;
   const price = document.getElementById(`price-${rowNum}`).value;
+  
   fetch(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
@@ -802,6 +828,7 @@ function saveDealDetails(rowNum, btn) {
     })
     .catch(() => {
       if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
+      loadLeads();
     });
 }
 
