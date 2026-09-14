@@ -684,7 +684,7 @@ function renderLeads(leads) {
           <input type="text" id="device-${lead.rowNum}" placeholder="نوع الجهاز" value="${lead.deviceType || ''}">
           <label>السعر</label>
           <input type="text" id="price-${lead.rowNum}" placeholder="السعر المتفق عليه" value="${lead.price || ''}">
-          <button class="secondary" onclick="saveDealDetails(${lead.rowNum})">حفظ تفاصيل الاتفاق</button>
+          <button class="secondary" onclick="saveDealDetails(${lead.rowNum}, this)">حفظ تفاصيل الاتفاق</button>
         </div>` : ''}
         <div class="lead-row sub-block" style="display:block">
           <label style="margin-top:0">المحافظة</label>
@@ -808,7 +808,12 @@ function reassignLead(rowNum) {
     .catch(() => {});
 }
 
-function saveDealDetails(rowNum) {
+function saveDealDetails(rowNum, btn) {
+  if (btn) {
+    if (btn.disabled) return; // ضغطة مكررة سريعة - تجاهلها
+    btn.disabled = true;
+    btn.textContent = 'جاري الحفظ...';
+  }
   const governorate = document.getElementById(`dealGov-${rowNum}`).value;
   const area = document.getElementById(`area-${rowNum}`).value;
   const addressDetails = document.getElementById(`address-${rowNum}`).value;
@@ -822,8 +827,17 @@ function saveDealDetails(rowNum) {
     body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
   })
     .then(r => r.json())
-    .then(() => loadLeads())
-    .catch(() => {});
+    .then(data => {
+      if (data.error) {
+        alert('حصل خطأ: ' + data.error);
+        if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
+        return;
+      }
+      loadLeads();
+    })
+    .catch(() => {
+      if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
+    });
 }
 
 function saveNotes(rowNum) {
