@@ -156,7 +156,7 @@
   <div id="adminToolsRow" class="hidden admin-tools-row">
     <button class="secondary" onclick="toggleReport()">📊 تقرير الأداء</button>
     <button class="secondary" onclick="archiveNow()">🗄 أرشفة القديم</button>
-    <button class="secondary" onclick="syncDailySheet()">📅 تحديث تشغيل اليوم</button>
+    <button class="secondary" onclick="syncTechnicianTabs()">🔧 تحديث تابات الفنيين</button>
   </div>
   <div id="kpiBar" class="kpi-bar"></div>
   <div class="filters-row">
@@ -545,16 +545,16 @@ function renderReport() {
     });
 }
 
-function syncDailySheet() {
-  if (!confirm("تحديث شيت 'تشغيل اليوم' بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
+function syncTechnicianTabs() {
+  if (!confirm("هل تريد تحديث وإنشاء تابات الفنيين بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
   fetch(SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'syncDailySheet', code: currentCode })
+    body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
   })
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        alert(`تم تحديث شيت تشغيل اليوم بنجاح (${data.count} عميل مطابق للفلتر)`);
+        alert(`تم إنشاء وتحديث تابات الفنيين بنجاح (${data.count} أمر شغل تم توزيعه)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
