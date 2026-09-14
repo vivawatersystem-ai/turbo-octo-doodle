@@ -35,7 +35,6 @@
   }
   button:hover { background: #0a5757; }
   button.secondary { background: #7a8a99; }
-  button:disabled { background: #b7c2c2; cursor: not-allowed; }
   .lead {
     border: 1px solid #e3e8ec; border-radius: 10px; padding: 12px; margin-bottom: 10px;
     background: #fbfdfd;
@@ -118,7 +117,7 @@
   <input type="text" id="ddDevice">
   <label>السعر</label>
   <input type="text" id="ddPrice">
-  <button onclick="submitDirectDeal(this)">إضافة العميل (تم الاتفاق)</button>
+  <button onclick="submitDirectDeal()">إضافة العميل (تم الاتفاق)</button>
   <div id="ddMsg"></div>
   </div>
 </div>
@@ -147,7 +146,7 @@
     <option value="عادي">عادي</option>
     <option value="مستعجل">مستعجل</option>
   </select>
-  <button onclick="submitLead(false, this)">إضافة الرقم</button>
+  <button onclick="submitLead()">إضافة الرقم</button>
   <div id="addMsg"></div>
   </div>
 </div>
@@ -173,7 +172,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylZ8YcZ1ytHKScVz25RRh53gSFZydROlvDt_0_hQS-VRKtwVYZwCMFxW9gnVmJXc7K/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzU5uwGb9qZufw_A6sj-iK4JvnYGI2J2u8CTidrbzsYqVfHpGRDy1t8UkeLNlgS72P2/exec';
 
 const GOVERNORATES = [
   'القاهرة','الجيزة','الإسكندرية','الدقهلية','البحر الأحمر','البحيرة','الفيوم',
@@ -195,34 +194,6 @@ let currentUserName = '';
 let currentDepartment = '';
 let allLeads = [];
 let expandedRows = new Set();
-
-// بيبعت الطلب للسيرفر. لو فشل الاتصال (شائع مع نت الموبايل)، ممكن يكون
-// الطلب اتنفذ فعليًا في السيرفر والرد بس ماوصلش للمتصفح - فبدل ما نطلع
-// رسالة "مشكلة في الاتصال" ونخوف الموظف من غير داعي، بنستنى شوية ونجرب
-// تاني بنفس البيانات؛ لو السيرفر رد إن ده "مسجل بالفعل / شغال بالفعل"،
-// يبقى المحاولة الأولى نجحت فعلاً وده مش خطأ حقيقي
-function postToScript(payload) {
-  return doPostRequest(payload, false);
-}
-
-function doPostRequest(payload, isRetry) {
-  return fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-    .then(r => r.json())
-    .catch(() => {
-      if (isRetry) {
-        return { error: 'CONNECTION_FAILED' };
-      }
-      return new Promise(resolve => setTimeout(resolve, 1500)).then(() =>
-        doPostRequest(payload, true).then(data => {
-          const alreadyHandledMarkers = ['اتسجل لسه', 'لسه شغال', 'تم التعامل معه بالفعل'];
-          if (data.error && alreadyHandledMarkers.some(m => data.error.indexOf(m) !== -1)) {
-            return { success: true };
-          }
-          return data;
-        })
-      );
-    });
-}
 
 function populateStaticLists() {
   const statusFilter = document.getElementById('statusFilter');
@@ -328,17 +299,11 @@ function toggleDirectDealForm() {
   }
 }
 
-function submitDirectDeal(btn) {
-  if (btn) {
-    if (btn.disabled) return;
-    btn.disabled = true;
-    btn.textContent = 'جاري الحفظ...';
-  }
+function submitDirectDeal() {
   const phone = document.getElementById('ddPhone').value.trim();
   if (!phone) {
     document.getElementById('ddMsg').textContent = 'اكتب رقم الواتساب الأول';
     document.getElementById('ddMsg').className = 'error';
-    if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
     return;
   }
   const payload = {
@@ -358,18 +323,12 @@ function submitDirectDeal(btn) {
   if (currentRole === 'admin') {
     payload.department = document.getElementById('ddDept').value;
   }
-  postToScript(payload)
+  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
     .then(data => {
-      if (data.error === 'CONNECTION_FAILED') {
-        document.getElementById('ddMsg').textContent = 'في مشكلة حقيقية في الاتصال - حدّث الصفحة وتأكد إن العميل اتسجل قبل ما تحاول تاني';
-        document.getElementById('ddMsg').className = 'error';
-        if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
-        return;
-      }
       if (data.error) {
         document.getElementById('ddMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('ddMsg').className = 'error';
-        if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
         return;
       }
       document.getElementById('ddMsg').textContent = 'تمت إضافة العميل في تم الاتفاق';
@@ -377,16 +336,14 @@ function submitDirectDeal(btn) {
       ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice']
         .forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('ddGov').value = '';
-      if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
+    })
+    .catch(() => {
+      document.getElementById('ddMsg').textContent = 'في مشكلة في الاتصال';
+      document.getElementById('ddMsg').className = 'error';
     });
 }
 
-function submitLead(force, btn) {
-  if (btn) {
-    if (btn.disabled) return;
-    btn.disabled = true;
-    btn.textContent = 'جاري الإضافة...';
-  }
+function submitLead(force) {
   const payload = {
     action: 'addLead',
     code: currentCode,
@@ -401,34 +358,23 @@ function submitLead(force, btn) {
   if (!payload.phone) {
     document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
     document.getElementById('addMsg').className = 'error';
-    if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
     return;
   }
-  postToScript(payload)
+  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
     .then(data => {
-      if (data.error === 'CONNECTION_FAILED') {
-        document.getElementById('addMsg').textContent = 'في مشكلة حقيقية في الاتصال - حدّث الصفحة وتأكد إن الرقم اتضاف قبل ما تحاول تاني';
-        document.getElementById('addMsg').className = 'error';
-        if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
-        return;
-      }
       if (data.duplicate) {
         const ex = data.existingLead;
         const exDate = ex.date ? new Date(ex.date).toLocaleDateString('ar-EG') : '';
         const proceed = confirm(
           `الرقم ده موجود قبل كده بتاريخ ${exDate} عند ${ex.employee} (${ex.department}) - الحالة: ${ex.status}.\nتحب تضيفه تاني؟`
         );
-        if (proceed) {
-          submitLead(true, btn);
-        } else if (btn) {
-          btn.disabled = false; btn.textContent = 'إضافة الرقم';
-        }
+        if (proceed) submitLead(true);
         return;
       }
       if (data.error) {
         document.getElementById('addMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('addMsg').className = 'error';
-        if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
         return;
       }
       document.getElementById('addMsg').textContent = `تمت الإضافة، اتوزع على: ${data.assignedEmployee}`;
@@ -436,8 +382,11 @@ function submitLead(force, btn) {
       document.getElementById('newPhone').value = '';
       document.getElementById('newName').value = '';
       document.getElementById('newNotes').value = '';
-      if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
       loadLeads();
+    })
+    .catch(() => {
+      document.getElementById('addMsg').textContent = 'في مشكلة في الاتصال';
+      document.getElementById('addMsg').className = 'error';
     });
 }
 
@@ -509,8 +458,13 @@ function normalizePhoneJs(phone) {
 }
 
 function updateClosedDealExecuted(rowNum, executed) {
-  postToScript({ action: 'updateClosedDeal', code: currentCode, rowNum, executed })
-    .then(() => renderReport());
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateClosedDeal', code: currentCode, rowNum, executed })
+  })
+    .then(r => r.json())
+    .then(() => renderReport())
+    .catch(() => {});
 }
 
 function toggleReport() {
@@ -593,35 +547,37 @@ function renderReport() {
 
 function syncTechnicianTabs() {
   if (!confirm("هل تريد تحديث وإنشاء تابات الفنيين والتحصيل بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
-  postToScript({ action: 'syncTechnicianTabs', code: currentCode })
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
+  })
+    .then(r => r.json())
     .then(data => {
-      if (data.error === 'CONNECTION_FAILED') {
-        alert('في مشكلة حقيقية في الاتصال بالسيرفر، حاول تاني');
-        return;
-      }
       if (data.success) {
-        alert(`تم إنشاء وتحديث تابات الفنيين والتحصيل بنجاح (${data.syncedCount} أمر شغل تم توزيعه)`);
+        alert(`تم إنشاء وتحديث تابات الفنيين والتحصيل بنجاح (${data.count} أمر شغل تم توزيعه)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
-    });
+    })
+    .catch(() => alert('في مشكلة في الاتصال بالسيرفر'));
 }
 
 function archiveNow() {
   if (!confirm('هيتم نقل الأرقام "تم الاتفاق" أو "رفض" الأقدم من 30 يوم لتبويب الأرشيف. تحب تكمل؟')) return;
-  postToScript({ action: 'archiveNow', code: currentCode })
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'archiveNow', code: currentCode })
+  })
+    .then(r => r.json())
     .then(data => {
-      if (data.error === 'CONNECTION_FAILED') {
-        alert('في مشكلة حقيقية في الاتصال، حاول تاني');
-        return;
-      }
       if (data.success) {
         alert(`تم أرشفة ${data.archivedCount} رقم`);
         loadLeads();
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
-    });
+    })
+    .catch(() => alert('في مشكلة في الاتصال'));
 }
 
 function formatDateForInput(val) {
@@ -779,8 +735,13 @@ function populateGovernorateSelect(rowNum, currentGov) {
 
 function saveGovernorate(rowNum) {
   const val = document.getElementById(`gov-${rowNum}`).value;
-  postToScript({ action: 'updateStatus', code: currentCode, rowNum, governorate: val })
-    .then(() => loadLeads());
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate: val })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function populateReassignEmployees(rowNum, department, currentEmployee) {
@@ -803,8 +764,13 @@ function updateReassignEmployees(rowNum) {
 function reassignLead(rowNum) {
   const newDepartment = document.getElementById(`reDept-${rowNum}`).value;
   const newEmployee = document.getElementById(`reEmp-${rowNum}`).value;
-  postToScript({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
-    .then(() => loadLeads());
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function saveDealDetails(rowNum, btn) {
@@ -821,19 +787,21 @@ function saveDealDetails(rowNum, btn) {
   const executionDate = document.getElementById(`execdate-${rowNum}`).value;
   const deviceType = document.getElementById(`device-${rowNum}`).value;
   const price = document.getElementById(`price-${rowNum}`).value;
-  postToScript({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
+  })
+    .then(r => r.json())
     .then(data => {
-      if (data.error === 'CONNECTION_FAILED') {
-        alert('في مشكلة حقيقية في الاتصال - حدّث الصفحة وتأكد إن الاتفاق اتحفظ قبل ما تحاول تاني');
-        if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
-        return;
-      }
       if (data.error) {
         alert('حصل خطأ: ' + data.error);
         if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
         return;
       }
       loadLeads();
+    })
+    .catch(() => {
+      if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
     });
 }
 
@@ -841,19 +809,34 @@ function saveNotes(rowNum) {
   const textarea = document.getElementById(`notes-${rowNum}`);
   const status = textarea.dataset.status;
   const notes = textarea.value;
-  postToScript({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
-    .then(() => loadLeads());
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function saveFollowUp(rowNum) {
   const val = document.getElementById(`followup-${rowNum}`).value;
-  postToScript({ action: 'updateStatus', code: currentCode, rowNum, followUpDate: val })
-    .then(() => loadLeads());
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, followUpDate: val })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 function changeStatus(rowNum, newStatus) {
-  postToScript({ action: 'updateStatus', code: currentCode, rowNum, status: newStatus })
-    .then(() => loadLeads());
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status: newStatus })
+  })
+    .then(r => r.json())
+    .then(() => loadLeads())
+    .catch(() => {});
 }
 
 populateStaticLists();
