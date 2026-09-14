@@ -580,7 +580,7 @@ function setupTechDropdown() {
 }
 
 function syncTechnicianTabs() {
-  if (!confirm("تحذير ⚠️\nهل أنت متأكد من تحديث تابات الفنيين؟ سيتم تصفية العملاء القدامى وعرض عملاء اليوم فقط.")) {
+  if (!confirm("تحذير ⚠️\nهل أنت متأكد من تحديث تابات الفنيين ومقارنة تواريخ التنفيذ لعرض عملاء اليوم فقط؟")) {
     return;
   }
 
@@ -591,7 +591,7 @@ function syncTechnicianTabs() {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        alert(`تم تحديث تابات الفنيين بنجاح (${data.syncedCount} عميل)`);
+        alert(`تم تحديث تابات الفنيين بنجاح (${data.syncedCount} عميل تطابق مع تاريخ اليوم)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
