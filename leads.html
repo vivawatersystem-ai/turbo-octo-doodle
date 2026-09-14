@@ -580,6 +580,10 @@ function setupTechDropdown() {
 }
 
 function syncTechnicianTabs() {
+  if (!confirm("تحذير ⚠️\nهل أنت متأكد من تحديث تابات الفنيين؟ سيتم إعادة بناء التابات وتصفير بيانات التحصيل لعملاء اليوم.")) {
+    return;
+  }
+
   fetch(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
@@ -810,7 +814,7 @@ function reassignLead(rowNum) {
 
 function saveDealDetails(rowNum, btn) {
   if (btn) {
-    if (btn.disabled) return; // ضغطة مكررة سريعة - تجاهلها
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.textContent = 'جاري الحفظ...';
   }
