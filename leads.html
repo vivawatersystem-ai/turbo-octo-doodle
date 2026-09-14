@@ -591,12 +591,15 @@ function syncTechnicianTabs() {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        alert(`تم تحديث تابات الفنيين (${data.syncedCount} صف)`);
+        alert(`تم تحديث تابات الفنيين بنجاح (${data.syncedCount} عميل)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
     })
-    .catch(() => alert('في مشكلة في الاتصال'));
+    .catch((err) => {
+      console.error(err);
+      alert('في مشكلة في الاتصال بالسيرفر');
+    });
 }
 
 function archiveNow() {
