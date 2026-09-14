@@ -196,6 +196,34 @@ let currentDepartment = '';
 let allLeads = [];
 let expandedRows = new Set();
 
+// بيبعت الطلب للسيرفر. لو فشل الاتصال (شائع مع نت الموبايل)، ممكن يكون
+// الطلب اتنفذ فعليًا في السيرفر والرد بس ماوصلش للمتصفح - فبدل ما نطلع
+// رسالة "مشكلة في الاتصال" ونخوف الموظف من غير داعي، بنستنى شوية ونجرب
+// تاني بنفس البيانات؛ لو السيرفر رد إن ده "مسجل بالفعل / شغال بالفعل"،
+// يبقى المحاولة الأولى نجحت فعلاً وده مش خطأ حقيقي
+function postToScript(payload) {
+  return doPostRequest(payload, false);
+}
+
+function doPostRequest(payload, isRetry) {
+  return fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(r => r.json())
+    .catch(() => {
+      if (isRetry) {
+        return { error: 'CONNECTION_FAILED' };
+      }
+      return new Promise(resolve => setTimeout(resolve, 1500)).then(() =>
+        doPostRequest(payload, true).then(data => {
+          const alreadyHandledMarkers = ['اتسجل لسه', 'لسه شغال', 'تم التعامل معه بالفعل'];
+          if (data.error && alreadyHandledMarkers.some(m => data.error.indexOf(m) !== -1)) {
+            return { success: true };
+          }
+          return data;
+        })
+      );
+    });
+}
+
 function populateStaticLists() {
   const statusFilter = document.getElementById('statusFilter');
   const allOpt = document.createElement('option');
@@ -330,9 +358,14 @@ function submitDirectDeal(btn) {
   if (currentRole === 'admin') {
     payload.department = document.getElementById('ddDept').value;
   }
-  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-    .then(r => r.json())
+  postToScript(payload)
     .then(data => {
+      if (data.error === 'CONNECTION_FAILED') {
+        document.getElementById('ddMsg').textContent = 'في مشكلة حقيقية في الاتصال - حدّث الصفحة وتأكد إن العميل اتسجل قبل ما تحاول تاني';
+        document.getElementById('ddMsg').className = 'error';
+        if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
+        return;
+      }
       if (data.error) {
         document.getElementById('ddMsg').textContent = 'حصل خطأ: ' + data.error;
         document.getElementById('ddMsg').className = 'error';
@@ -344,11 +377,6 @@ function submitDirectDeal(btn) {
       ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice']
         .forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('ddGov').value = '';
-      if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
-    })
-    .catch(() => {
-      document.getElementById('ddMsg').textContent = 'في مشكلة في الاتصال';
-      document.getElementById('ddMsg').className = 'error';
       if (btn) { btn.disabled = false; btn.textContent = 'إضافة العميل (تم الاتفاق)'; }
     });
 }
@@ -376,9 +404,14 @@ function submitLead(force, btn) {
     if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
     return;
   }
-  fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
-    .then(r => r.json())
+  postToScript(payload)
     .then(data => {
+      if (data.error === 'CONNECTION_FAILED') {
+        document.getElementById('addMsg').textContent = 'في مشكلة حقيقية في الاتصال - حدّث الصفحة وتأكد إن الرقم اتضاف قبل ما تحاول تاني';
+        document.getElementById('addMsg').className = 'error';
+        if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
+        return;
+      }
       if (data.duplicate) {
         const ex = data.existingLead;
         const exDate = ex.date ? new Date(ex.date).toLocaleDateString('ar-EG') : '';
@@ -405,11 +438,6 @@ function submitLead(force, btn) {
       document.getElementById('newNotes').value = '';
       if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
       loadLeads();
-    })
-    .catch(() => {
-      document.getElementById('addMsg').textContent = 'في مشكلة في الاتصال';
-      document.getElementById('addMsg').className = 'error';
-      if (btn) { btn.disabled = false; btn.textContent = 'إضافة الرقم'; }
     });
 }
 
@@ -481,13 +509,8 @@ function normalizePhoneJs(phone) {
 }
 
 function updateClosedDealExecuted(rowNum, executed) {
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'updateClosedDeal', code: currentCode, rowNum, executed })
-  })
-    .then(r => r.json())
-    .then(() => renderReport())
-    .catch(() => {});
+  postToScript({ action: 'updateClosedDeal', code: currentCode, rowNum, executed })
+    .then(() => renderReport());
 }
 
 function toggleReport() {
@@ -570,37 +593,35 @@ function renderReport() {
 
 function syncTechnicianTabs() {
   if (!confirm("هل تريد تحديث وإنشاء تابات الفنيين والتحصيل بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
-  })
-    .then(r => r.json())
+  postToScript({ action: 'syncTechnicianTabs', code: currentCode })
     .then(data => {
+      if (data.error === 'CONNECTION_FAILED') {
+        alert('في مشكلة حقيقية في الاتصال بالسيرفر، حاول تاني');
+        return;
+      }
       if (data.success) {
-        alert(`تم إنشاء وتحديث تابات الفنيين والتحصيل بنجاح (${data.count} أمر شغل تم توزيعه)`);
+        alert(`تم إنشاء وتحديث تابات الفنيين والتحصيل بنجاح (${data.syncedCount} أمر شغل تم توزيعه)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
-    })
-    .catch(() => alert('في مشكلة في الاتصال بالسيرفر'));
+    });
 }
 
 function archiveNow() {
   if (!confirm('هيتم نقل الأرقام "تم الاتفاق" أو "رفض" الأقدم من 30 يوم لتبويب الأرشيف. تحب تكمل؟')) return;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'archiveNow', code: currentCode })
-  })
-    .then(r => r.json())
+  postToScript({ action: 'archiveNow', code: currentCode })
     .then(data => {
+      if (data.error === 'CONNECTION_FAILED') {
+        alert('في مشكلة حقيقية في الاتصال، حاول تاني');
+        return;
+      }
       if (data.success) {
         alert(`تم أرشفة ${data.archivedCount} رقم`);
         loadLeads();
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
-    })
-    .catch(() => alert('في مشكلة في الاتصال'));
+    });
 }
 
 function formatDateForInput(val) {
@@ -758,13 +779,8 @@ function populateGovernorateSelect(rowNum, currentGov) {
 
 function saveGovernorate(rowNum) {
   const val = document.getElementById(`gov-${rowNum}`).value;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate: val })
-  })
-    .then(r => r.json())
-    .then(() => loadLeads())
-    .catch(() => {});
+  postToScript({ action: 'updateStatus', code: currentCode, rowNum, governorate: val })
+    .then(() => loadLeads());
 }
 
 function populateReassignEmployees(rowNum, department, currentEmployee) {
@@ -787,13 +803,8 @@ function updateReassignEmployees(rowNum) {
 function reassignLead(rowNum) {
   const newDepartment = document.getElementById(`reDept-${rowNum}`).value;
   const newEmployee = document.getElementById(`reEmp-${rowNum}`).value;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
-  })
-    .then(r => r.json())
-    .then(() => loadLeads())
-    .catch(() => {});
+  postToScript({ action: 'reassign', code: currentCode, rowNum, newDepartment, newEmployee })
+    .then(() => loadLeads());
 }
 
 function saveDealDetails(rowNum, btn) {
@@ -810,21 +821,19 @@ function saveDealDetails(rowNum, btn) {
   const executionDate = document.getElementById(`execdate-${rowNum}`).value;
   const deviceType = document.getElementById(`device-${rowNum}`).value;
   const price = document.getElementById(`price-${rowNum}`).value;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
-  })
-    .then(r => r.json())
+  postToScript({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
     .then(data => {
+      if (data.error === 'CONNECTION_FAILED') {
+        alert('في مشكلة حقيقية في الاتصال - حدّث الصفحة وتأكد إن الاتفاق اتحفظ قبل ما تحاول تاني');
+        if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
+        return;
+      }
       if (data.error) {
         alert('حصل خطأ: ' + data.error);
         if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
         return;
       }
       loadLeads();
-    })
-    .catch(() => {
-      if (btn) { btn.disabled = false; btn.textContent = 'حفظ تفاصيل الاتفاق'; }
     });
 }
 
@@ -832,34 +841,19 @@ function saveNotes(rowNum) {
   const textarea = document.getElementById(`notes-${rowNum}`);
   const status = textarea.dataset.status;
   const notes = textarea.value;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
-  })
-    .then(r => r.json())
-    .then(() => loadLeads())
-    .catch(() => {});
+  postToScript({ action: 'updateStatus', code: currentCode, rowNum, status, notes })
+    .then(() => loadLeads());
 }
 
 function saveFollowUp(rowNum) {
   const val = document.getElementById(`followup-${rowNum}`).value;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, followUpDate: val })
-  })
-    .then(r => r.json())
-    .then(() => loadLeads())
-    .catch(() => {});
+  postToScript({ action: 'updateStatus', code: currentCode, rowNum, followUpDate: val })
+    .then(() => loadLeads());
 }
 
 function changeStatus(rowNum, newStatus) {
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, status: newStatus })
-  })
-    .then(r => r.json())
-    .then(() => loadLeads())
-    .catch(() => {});
+  postToScript({ action: 'updateStatus', code: currentCode, rowNum, status: newStatus })
+    .then(() => loadLeads());
 }
 
 populateStaticLists();
