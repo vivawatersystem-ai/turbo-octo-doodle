@@ -65,7 +65,8 @@
   .kpi { background:#eef6f6; color:#0d6e6e; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:20px; white-space: nowrap; }
   .filters-row { display:flex; gap:8px; margin-bottom:12px; }
   .filters-row input, .filters-row select { margin-top: 0; }
-  .admin-tools-row { display:flex; gap:8px; margin-bottom:12px; }
+  .admin-tools-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .admin-tools-row button { flex: 1; min-width: 130px; margin-top:0; }
   .sub-block { border-top:1px dashed #ddd; padding-top:8px; margin-top:8px; }
   .lead-summary { cursor: pointer; padding: 2px 0; }
   .lead-summary:hover { opacity: 0.85; }
@@ -153,10 +154,9 @@
 <div class="card hidden" id="listCard">
   <h2 id="listTitle">الأرقام</h2>
   <div id="adminToolsRow" class="hidden admin-tools-row">
-    <button class="secondary" style="margin-top:0" onclick="toggleReport()">📊 تقرير الأداء</button>
-    <button class="secondary" style="margin-top:0" onclick="archiveNow()">🗄 أرشفة القديم</button>
-    <button class="secondary" style="margin-top:0" onclick="syncTechnicianTabs()">🔧 تحديث تابات الفنيين</button>
-    <button class="secondary" style="margin-top:0" onclick="setupTechDropdown()">⚙️ إعداد دروب داون الفنيين</button>
+    <button class="secondary" onclick="toggleReport()">📊 تقرير الأداء</button>
+    <button class="secondary" onclick="archiveNow()">🗄 أرشفة القديم</button>
+    <button class="secondary" onclick="syncDailySheet()">📅 تحديث تشغيل اليوم</button>
   </div>
   <div id="kpiBar" class="kpi-bar"></div>
   <div class="filters-row">
@@ -172,7 +172,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfxKv0p-jnKcvCDbk5IlnIux2h75O_VKmaec6x1XvbqVL6BfkTC8HDDZcLbeySk_s3/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylZ8YcZ1ytHKScVz25RRh53gSFZydROlvDt_0_hQS-VRKtwVYZwCMFxW9gnVmJXc7K/exec';
 
 const GOVERNORATES = [
   'القاهرة','الجيزة','الإسكندرية','الدقهلية','البحر الأحمر','البحيرة','الفيوم',
@@ -545,61 +545,21 @@ function renderReport() {
     });
 }
 
-function viewLog(rowNum, phone) {
-  fetch(`${SCRIPT_URL}?action=getLog&code=${encodeURIComponent(currentCode)}&phone=${encodeURIComponent(phone)}`)
-    .then(r => r.json())
-    .then(data => {
-      const entries = data.log || [];
-      if (entries.length === 0) {
-        alert('مفيش سجل تغييرات لسه لهذا الرقم');
-        return;
-      }
-      const text = entries.map(e => {
-        const d = e.date ? new Date(e.date).toLocaleString('ar-EG') : '';
-        return `${d} — ${e.employee}: ${e.change}`;
-      }).join('\n');
-      alert(text);
-    })
-    .catch(() => alert('في مشكلة في جلب السجل'));
-}
-
-function setupTechDropdown() {
+function syncDailySheet() {
+  if (!confirm("تحديث شيت 'تشغيل اليوم' بناءً على الفلتر الحالي في شيت أوامر الشغل؟")) return;
   fetch(SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'setupTechDropdown', code: currentCode })
+    body: JSON.stringify({ action: 'syncDailySheet', code: currentCode })
   })
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        alert('اتظبط الدروب داون. روح تبويب "قائمة الفنيين" وضيف/امسح أسماء الفنيين براحتك.');
+        alert(`تم تحديث شيت تشغيل اليوم بنجاح (${data.count} عميل مطابق للفلتر)`);
       } else {
         alert('حصل خطأ: ' + (data.error || 'غير معروف'));
       }
     })
-    .catch(() => alert('في مشكلة في الاتصال'));
-}
-
-function syncTechnicianTabs() {
-  if (!confirm("تحذير ⚠️\nهل أنت متأكد من تحديث تابات الفنيين بناءً على الصفوف المرئية (المفلترة) في شيت أوامر الشغل؟")) {
-    return;
-  }
-
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'syncTechnicianTabs', code: currentCode })
-  })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        alert(`تم تحديث تابات الفنيين بنجاح (${data.syncedCount} عميل ظاهر في الفلتر)`);
-      } else {
-        alert('حصل خطأ: ' + (data.error || 'غير معروف'));
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      alert('في مشكلة في الاتصال بالسيرفر');
-    });
+    .catch(() => alert('في مشكلة في الاتصال بالسيرفر'));
 }
 
 function archiveNow() {
@@ -717,8 +677,6 @@ function renderLeads(leads) {
           <select id="reEmp-${lead.rowNum}"></select>
           <button class="secondary" onclick="reassignLead(${lead.rowNum})">حفظ التغيير</button>
         </div>` : ''}
-        ${currentRole === 'admin' ? `
-        <button class="secondary" onclick="viewLog(${lead.rowNum}, '${normalizePhoneJs(lead.phone)}')">🕘 سجل التغييرات</button>` : ''}
       </div>
     `;
     container.appendChild(div);
