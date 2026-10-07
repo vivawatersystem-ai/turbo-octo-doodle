@@ -98,6 +98,12 @@
   <input type="text" id="ddPhone2">
   <label>اسم العميل</label>
   <input type="text" id="ddName">
+  <label>نوع العميل</label>
+  <select id="ddCustomerType">
+    <option value="">— اختر —</option>
+    <option value="شركة">شركة</option>
+    <option value="خارجي">خارجي</option>
+  </select>
   <label>المحافظة</label>
   <select id="ddGov"></select>
   <label>المنطقة</label>
@@ -134,6 +140,12 @@
   <input type="text" id="newPhone" placeholder="01xxxxxxxxx">
   <label>اسم العميل (اختياري)</label>
   <input type="text" id="newName">
+  <label>نوع العميل</label>
+  <select id="newCustomerType">
+    <option value="">— اختر —</option>
+    <option value="شركة">شركة</option>
+    <option value="خارجي">خارجي</option>
+  </select>
   <label>القسم</label>
   <select id="newDept" onchange="suggestEmployee()">
     <option value="سيلز">سيلز</option>
@@ -303,12 +315,23 @@ function toggleDirectDealForm() {
 
 function submitDirectDeal() {
   const phone = document.getElementById('ddPhone').value.trim();
-  if (!phone) {
-    document.getElementById('ddMsg').textContent = 'اكتب رقم الواتساب الأول';
+  const customerType = document.getElementById('ddCustomerType').value;
+  const customerName = document.getElementById('ddName').value.trim();
+  const governorate = document.getElementById('ddGov').value;
+  const area = document.getElementById('ddArea').value.trim();
+  const addressDetails = document.getElementById('ddAddress').value.trim();
+  const agreementDetails = document.getElementById('ddRequirement').value.trim();
+  const executionDate = document.getElementById('ddExecDate').value;
+  const deviceType = document.getElementById('ddDevice').value.trim();
+  const price = document.getElementById('ddPrice').value.trim();
+
+  if (!phone || !customerType || !customerName || !governorate || !area || !addressDetails ||
+      !agreementDetails || !executionDate || !deviceType || !price) {
+    document.getElementById('ddMsg').textContent = 'لازم تملي كل البيانات (الرقم، الاسم، نوع العميل، المحافظة، المنطقة، العنوان بالتفصيل، المطلوب تنفيذه، تاريخ التنفيذ، نوع الجهاز، السعر) - رقم موبايل 2 اختياري بس';
     document.getElementById('ddMsg').className = 'error';
     return;
   }
-  
+
   const btn = document.getElementById('ddSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'جاري الحفظ...';
@@ -318,14 +341,15 @@ function submitDirectDeal() {
     code: currentCode,
     phone: phone,
     phone2: document.getElementById('ddPhone2').value.trim(),
-    customerName: document.getElementById('ddName').value.trim(),
-    governorate: document.getElementById('ddGov').value,
-    area: document.getElementById('ddArea').value.trim(),
-    addressDetails: document.getElementById('ddAddress').value.trim(),
-    agreementDetails: document.getElementById('ddRequirement').value.trim(),
-    executionDate: document.getElementById('ddExecDate').value,
-    deviceType: document.getElementById('ddDevice').value.trim(),
-    price: document.getElementById('ddPrice').value.trim()
+    customerName: customerName,
+    customerType: customerType,
+    governorate: governorate,
+    area: area,
+    addressDetails: addressDetails,
+    agreementDetails: agreementDetails,
+    executionDate: executionDate,
+    deviceType: deviceType,
+    price: price
   };
   if (currentRole === 'admin') {
     payload.department = document.getElementById('ddDept').value;
@@ -345,6 +369,7 @@ function submitDirectDeal() {
       ['ddPhone', 'ddPhone2', 'ddName', 'ddArea', 'ddAddress', 'ddRequirement', 'ddExecDate', 'ddDevice', 'ddPrice']
         .forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('ddGov').value = '';
+      document.getElementById('ddCustomerType').value = '';
     })
     .catch(() => {
       btn.disabled = false;
@@ -356,8 +381,11 @@ function submitDirectDeal() {
 
 function submitLead(force) {
   const phone = document.getElementById('newPhone').value.trim();
-  if (!phone) {
-    document.getElementById('addMsg').textContent = 'اكتب رقم الواتساب الأول';
+  const customerName = document.getElementById('newName').value.trim();
+  const customerType = document.getElementById('newCustomerType').value;
+  const notes = document.getElementById('newNotes').value.trim();
+  if (!phone || !customerName || !customerType || !notes) {
+    document.getElementById('addMsg').textContent = 'لازم تملي كل البيانات (رقم الواتساب، اسم العميل، نوع العميل، ملاحظات)';
     document.getElementById('addMsg').className = 'error';
     return;
   }
@@ -373,6 +401,7 @@ function submitLead(force) {
     code: currentCode,
     phone: phone,
     customerName: document.getElementById('newName').value.trim(),
+    customerType: customerType,
     department: document.getElementById('newDept').value,
     employeeOverride: document.getElementById('newEmployee').value,
     notes: document.getElementById('newNotes').value.trim(),
@@ -404,6 +433,7 @@ function submitLead(force) {
       document.getElementById('newPhone').value = '';
       document.getElementById('newName').value = '';
       document.getElementById('newNotes').value = '';
+      document.getElementById('newCustomerType').value = '';
       loadLeads();
     })
     .catch(() => {
@@ -660,7 +690,13 @@ function renderLeads(leads) {
         </div>
         ${lead.status === 'تم الاتفاق' ? `
         <div class="lead-row sub-block" style="display:block">
-          <label style="margin-top:0">المحافظة</label>
+          <label style="margin-top:0">نوع العميل</label>
+          <select id="custType-${lead.rowNum}">
+            <option value="">— اختر —</option>
+            <option value="شركة" ${lead.customerType === 'شركة' ? 'selected' : ''}>شركة</option>
+            <option value="خارجي" ${lead.customerType === 'خارجي' ? 'selected' : ''}>خارجي</option>
+          </select>
+          <label>المحافظة</label>
           <select id="dealGov-${lead.rowNum}"></select>
           <label>المنطقة</label>
           <input type="text" id="area-${lead.rowNum}" placeholder="المنطقة بالتفصيل" value="${lead.area || ''}">
@@ -801,21 +837,30 @@ function reassignLead(rowNum) {
 function saveDealDetails(rowNum, btn) {
   if (btn) {
     if (btn.disabled) return;
+  }
+  const customerType = document.getElementById(`custType-${rowNum}`).value;
+  const governorate = document.getElementById(`dealGov-${rowNum}`).value;
+  const area = document.getElementById(`area-${rowNum}`).value.trim();
+  const addressDetails = document.getElementById(`address-${rowNum}`).value.trim();
+  const agreementDetails = document.getElementById(`agreement-${rowNum}`).value.trim();
+  const phone2 = document.getElementById(`phone2-${rowNum}`).value.trim();
+  const executionDate = document.getElementById(`execdate-${rowNum}`).value;
+  const deviceType = document.getElementById(`device-${rowNum}`).value.trim();
+  const price = document.getElementById(`price-${rowNum}`).value.trim();
+
+  if (!customerType || !governorate || !area || !addressDetails || !agreementDetails || !executionDate || !deviceType || !price) {
+    alert('لازم تملي كل بيانات الاتفاق (نوع العميل، المحافظة، المنطقة، العنوان بالتفصيل، المطلوب تنفيذه، تاريخ التنفيذ، نوع الجهاز، السعر) - رقم موبايل 2 اختياري بس');
+    return;
+  }
+
+  if (btn) {
     btn.disabled = true;
     btn.textContent = 'جاري الحفظ...';
   }
-  const governorate = document.getElementById(`dealGov-${rowNum}`).value;
-  const area = document.getElementById(`area-${rowNum}`).value;
-  const addressDetails = document.getElementById(`address-${rowNum}`).value;
-  const agreementDetails = document.getElementById(`agreement-${rowNum}`).value;
-  const phone2 = document.getElementById(`phone2-${rowNum}`).value;
-  const executionDate = document.getElementById(`execdate-${rowNum}`).value;
-  const deviceType = document.getElementById(`device-${rowNum}`).value;
-  const price = document.getElementById(`price-${rowNum}`).value;
-  
+
   fetch(SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
+    body: JSON.stringify({ action: 'updateStatus', code: currentCode, rowNum, customerType, governorate, area, addressDetails, agreementDetails, phone2, executionDate, deviceType, price })
   })
     .then(r => r.json())
     .then(data => {
