@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">شركة Viva Water System | المتجر الإلكتروني الرسمى</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: '#0284c7', secondary: '#0f172a', accent: '#25D366' },
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: bold; }
+        .product-card { transition: all 0.3s ease; }
+        .product-card:hover { transform: translateY(-4px); }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-invoice, #printable-invoice * { visibility: visible; }
+            #printable-invoice { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col justify-between pb-16 md:pb-0">
+
+    <!-- Announcement Bar -->
+    <div id="announcement-bar" class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-slate-200 text-xs py-2 px-4 text-center font-bold">
+        <span id="announcement-text">🌊 مرحباً بكم في شركة Viva Water System - أقوى عروض صيانة وفلاتر المياه بالضمان!</span>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm sticky top-0 z-40 transition-colors">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img id="store-logo" src="https://via.placeholder.com/100?text=Viva+Water" alt="Logo" class="w-11 h-11 object-contain rounded-2xl border dark:border-slate-800 p-1 bg-white shadow-sm">
+                <div>
+                    <h1 id="store-name" class="font-black text-lg text-slate-900 dark:text-white leading-tight tracking-tight">شركة Viva Water System</h1>
+                    <p id="store-desc" class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">حلول متكاملة لتنقية ومعالجة المياه</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="الوضع الداكن/الفاتح">
+                    <i id="dark-icon" class="fa-solid fa-moon text-base"></i>
+                </button>
+
+                <button id="admin-badge" onclick="openLoginModal()" class="hidden bg-amber-100 text-amber-800 text-xs px-3 py-2 rounded-full font-bold flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-user-shield"></i> لوحة التحكم
+                </button>
+
+                <button onclick="toggleCart()" class="relative p-2.5 bg-sky-50 dark:bg-slate-800 text-primary dark:text-sky-400 rounded-2xl hover:bg-sky-100 dark:hover:bg-slate-700 transition">
+                    <i class="fa-solid fa-cart-shopping text-base"></i>
+                    <span id="cart-count" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Panel (Dashboard) -->
+    <div id="admin-panel" class="hidden max-w-6xl mx-auto px-4 mt-6 w-full">
+        <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-2xl border border-slate-800">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-slate-800 gap-3">
+                <div>
+                    <h2 class="font-black text-xl flex items-center gap-2"><i class="fa-solid fa-sliders text-amber-400"></i> لوحة التحكم بالإدارة</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">تعديل كامل المنتجات، الهوية، والنسخ الاحتياطي</p>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="openProductModal()" class="flex-1 sm:flex-initial bg-primary hover:bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-plus"></i> إضافة منتج
+                    </button>
+                    <button onclick="logoutAdmin()" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition">
+                        <i class="fa-solid fa-right-from-bracket"></i> خروج
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex gap-4 border-b border-slate-800 mb-4 overflow-x-auto text-xs font-bold hide-scrollbar">
+                <button onclick="switchAdminTab('general')" id="tab-btn-general" class="pb-2 px-1 text-slate-400 hover:text-white transition tab-active">البيانات والهوية</button>
+                <button onclick="switchAdminTab('banner')" id="tab-btn-banner" class="pb-2 px-1 text-slate-400 hover:text-white transition">البانر الإعلاني</button>
+                <button onclick="switchAdminTab('contact')" id="tab-btn-contact" class="pb-2 px-1 text-slate-400 hover:text-white transition">التواصل وساعات العمل</button>
+                <button onclick="switchAdminTab('reviews')" id="tab-btn-reviews" class="pb-2 px-1 text-slate-400 hover:text-white transition">آراء العملاء</button>
+                <button onclick="switchAdminTab('backup')" id="tab-btn-backup" class="pb-2 px-1 text-amber-400 hover:text-amber-300 transition"><i class="fa-solid fa-database ml-1"></i>النسخ الاحتياطي والضبط</button>
+            </div>
+
+            <div id="tab-general" class="admin-tab-content grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">اسم الشركة:</label>
+                    <input type="text" id="setting-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-primary" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">الوصف المختصر:</label>
+                    <input type="text" id="setting-desc" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-primary" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">رقم الواتساب (بالرمز الدولي):</label>
+                    <input type="text" id="setting-phone" placeholder="201000000000" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-primary" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">العملة:</label>
+                    <input type="text" id="setting-currency" placeholder="ج.م" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-primary" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">الشعار (رفع من الجهاز):</label>
+                    <input type="file" id="setting-logo-file" accept="image/*" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-1.5 text-white text-xs" onchange="handleLogoUpload(this)">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">كلمة سر اللوحة الجديدة:</label>
+                    <input type="password" id="setting-pass" placeholder="تغيير كلمة السر..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-primary" onchange="saveSettings()">
+                </div>
+            </div>
+
+            <div id="tab-banner" class="admin-tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">العنوان الرئيسي للبانر:</label>
+                    <input type="text" id="banner-title" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">العنوان الفرعي للبانر:</label>
+                    <input type="text" id="banner-sub" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">صورة البانر (رفع من الجهاز):</label>
+                    <input type="file" id="banner-img-file" accept="image/*" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-1.5 text-white" onchange="handleBannerUpload(this)">
+                </div>
+                <div class="flex items-center gap-2 mt-4">
+                    <input type="checkbox" id="banner-show" class="w-4 h-4 rounded" onchange="saveSettings()">
+                    <label for="banner-show" class="text-slate-300 font-bold">إظهار البانر الإعلاني</label>
+                </div>
+            </div>
+
+            <div id="tab-contact" class="admin-tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">العنوان:</label>
+                    <input type="text" id="contact-address" placeholder="القاهرة، مصر" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">ساعات العمل:</label>
+                    <input type="text" id="contact-hours" placeholder="يومياً من 9 ص لـ 10 م" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white" onchange="saveSettings()">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">رابط الفيسبوك:</label>
+                    <input type="text" id="contact-fb" placeholder="https://facebook.com/..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white" onchange="saveSettings()">
+                </div>
+            </div>
+
+            <div id="tab-reviews" class="admin-tab-content hidden text-xs space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">إدارة آراء وتقييمات العملاء</span>
+                    <button onclick="addReviewPrompt()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg border border-slate-700">+ إضافة رأي</button>
+                </div>
+                <div id="admin-reviews-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+            </div>
+
+            <div id="tab-backup" class="admin-tab-content hidden text-xs space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-800 p-4 rounded-2xl space-y-2 border border-slate-700">
+                        <h4 class="font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid fa-download"></i> تصدير نسخة احتياطية</h4>
+                        <p class="text-slate-400">حفظ كافة منتجاتك وإعداداتك في ملف JSON على جهازك.</p>
+                        <button onclick="exportBackup()" class="bg-primary hover:bg-sky-600 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-arrow-down"></i> تنزيل ملف البيانات
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-800 p-4 rounded-2xl space-y-2 border border-slate-700">
+                        <h4 class="font-bold text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-upload"></i> استعادة نسخة احتياطية</h4>
+                        <p class="text-slate-400">رفع ملف البيانات المسترجعة لاستعادة المنتجات فوراً.</p>
+                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="importBackup(this)">
+                        <button onclick="document.getElementById('import-file').click()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-arrow-up"></i> رفع واستعادة
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                    <span class="text-slate-400">مسح البيانات المخصصة وفك تعليق الذاكرة:</span>
+                    <button onclick="resetDefaultData()" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg transition">إعادة ضبط المصنع</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-grow space-y-6">
+
+        <!-- Hero Banner Section -->
+        <div id="hero-banner" class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white shadow-xl min-h-[200px] flex items-center p-6 md:p-10">
+            <div class="relative z-10 max-w-xl space-y-2">
+                <span class="bg-primary/20 text-sky-300 border border-sky-400/30 text-[11px] font-extrabold px-3 py-1 rounded-full inline-block">جودة واحترافية عالمية</span>
+                <h2 id="banner-title-display" class="text-2xl md:text-3xl font-black leading-tight">أفضل أنظمة الـ RO ومعالجة المياه في مصر</h2>
+                <p id="banner-sub-display" class="text-slate-300 text-xs md:text-sm">احصل على أفضل أنظمة الفلاتر والرو المعالجة بأعلى المقاييس العالمية مع ضمان الصيانة المباشرة.</p>
+                <div class="pt-2">
+                    <a href="#products-grid" class="bg-primary hover:bg-sky-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl inline-flex items-center gap-2 transition shadow-lg">
+                        تصفح المنتجات الآن <i class="fa-solid fa-arrow-down"></i>
+                    </a>
+                </div>
+            </div>
+            <img id="banner-bg-img" src="https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=800" alt="Banner" class="absolute inset-0 w-full h-full object-cover opacity-20">
+        </div>
+
+        <!-- Category Stories Circles -->
+        <div class="space-y-2">
+            <h3 class="font-extrabold text-slate-800 dark:text-white text-xs px-1">الأقسام الرئيسية</h3>
+            <div id="category-stories" class="flex gap-4 overflow-x-auto py-2 px-1 hide-scrollbar">
+                <!-- Dynamic Category Circles -->
+            </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div id="search-bar-section" class="flex flex-col md:flex-row gap-3 justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+            <div class="relative w-full md:w-80">
+                <input type="text" id="search-input" onkeyup="filterProducts()" placeholder="ابحث عن اسم المنتج أو قطعة الغيار..." class="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-primary text-xs font-bold">
+                <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-3 text-slate-400 text-sm"></i>
+            </div>
+            <div id="category-filters" class="flex gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 hide-scrollbar">
+                <!-- Dynamic Categories Buttons -->
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div>
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h3 class="font-black text-slate-800 dark:text-white text-base flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-primary"></i> قائمة المنتجات المعروضة</h3>
+                <span id="products-count" class="text-xs text-slate-500 dark:text-slate-400 font-extrabold">0 منتج</span>
+            </div>
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Dynamic Products -->
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div id="reviews-section" class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
+            <h3 class="font-black text-slate-800 dark:text-white text-base text-center flex items-center justify-center gap-2">
+                <i class="fa-solid fa-star text-amber-400"></i> آراء وتقييمات العملاء
+            </h3>
+            <div id="reviews-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Dynamic Reviews -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-40 py-2 px-6 flex justify-between items-center text-slate-500 dark:text-slate-400 text-[10px] font-bold">
+        <a href="#" class="flex flex-col items-center gap-1 text-primary"><i class="fa-solid fa-house text-base"></i>الرئيسية</a>
+        <a href="#search-bar-section" class="flex flex-col items-center gap-1 hover:text-primary"><i class="fa-solid fa-magnifying-glass text-base"></i>البحث</a>
+        <button onclick="toggleCart()" class="flex flex-col items-center gap-1 hover:text-primary relative">
+            <i class="fa-solid fa-cart-shopping text-base"></i>السلة
+        </button>
+        <button onclick="openWhatsAppDirect()" class="flex flex-col items-center gap-1 text-emerald-500"><i class="fa-brands fa-whatsapp text-base"></i>الواتساب</button>
+    </nav>
+
+    <!-- Floating WhatsApp Widget -->
+    <div class="hidden md:flex fixed bottom-6 right-6 z-40 flex-col items-end gap-2">
+        <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white text-xs px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 font-bold animate-bounce">
+            تواصل معنا مباشرة عبر الواتساب! 💬
+        </div>
+        <button onclick="openWhatsAppDirect()" class="bg-accent hover:bg-emerald-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl text-2xl transition transform hover:scale-110">
+            <i class="fa-brands fa-whatsapp"></i>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 mt-12 py-8 text-xs">
+        <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-slate-800">
+            <div class="space-y-2">
+                <h4 id="footer-store-name" class="font-bold text-white text-sm">شركة Viva Water System</h4>
+                <p id="footer-store-desc" class="text-slate-400 leading-relaxed">متخصصون في توريد وصيانة جميع فلاتر ومحطات تنقية المياه الـ RO بأعلى جودة مع المتابعة الدورية.</p>
+            </div>
+            <div class="space-y-2">
+                <h4 class="font-bold text-white text-sm">تواصل معنا</h4>
+                <p><i class="fa-solid fa-location-dot text-primary ml-1"></i> <span id="footer-address">مصر - القاهرة</span></p>
+                <p><i class="fa-solid fa-clock text-primary ml-1"></i> <span id="footer-hours">يومياً من 9 ص لـ 10 م</span></p>
+            </div>
+            <div class="space-y-2">
+                <h4 class="font-bold text-white text-sm">روابط سريعة</h4>
+                <div class="flex gap-3 text-lg pt-1">
+                    <a id="footer-fb-link" href="#" target="_blank" class="text-slate-400 hover:text-white transition"><i class="fa-brands fa-facebook"></i></a>
+                    <a id="footer-wa-link" href="#" target="_blank" class="text-slate-400 hover:text-emerald-400 transition"><i class="fa-brands fa-whatsapp"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto px-4 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>© جميع الحقوق محفوظة لـ Viva Water System</p>
+            <button onclick="openLoginModal()" class="text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 font-bold">
+                <i class="fa-solid fa-lock text-xs"></i> دخول لوحة الإدارة
+            </button>
+        </div>
+    </footer>
+
+    <!-- Product Quick View Modal -->
+    <div id="quickview-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-white w-full max-w-lg rounded-3xl p-6 shadow-2xl relative space-y-4">
+            <button onclick="closeQuickView()" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div id="qv-content" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-end">
+        <div class="bg-white dark:bg-slate-900 dark:text-white w-full max-w-md h-full flex flex-col justify-between p-5 shadow-2xl">
+            <div>
+                <div class="flex justify-between items-center pb-3 border-b dark:border-slate-800">
+                    <h3 class="font-extrabold text-base flex items-center gap-2"><i class="fa-solid fa-basket-shopping text-primary"></i> سلة طلباتك</h3>
+                    <button onclick="toggleCart()" class="text-slate-400 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+                <div id="cart-items" class="py-4 overflow-y-auto max-h-[55vh] space-y-3"></div>
+            </div>
+            <div class="border-t dark:border-slate-800 pt-4 space-y-3">
+                <div class="flex justify-between font-extrabold text-base">
+                    <span>الإجمالي الكلي:</span>
+                    <span id="cart-total" class="text-primary">0 ج.م</span>
+                </div>
+                <div class="space-y-2">
+                    <input type="text" id="cust-name" placeholder="الاسم بالكامل *" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                    <input type="text" id="cust-address" placeholder="العنوان بالتفصيل *" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                </div>
+                <button onclick="sendOrder()" class="w-full bg-accent hover:bg-emerald-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-lg text-sm">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> إرسال الطلب فوراً عبر الواتساب
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div id="invoice-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white text-slate-900 w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4">
+            <div id="printable-invoice" class="space-y-4 p-2">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <div>
+                        <h2 id="inv-company-name" class="font-black text-lg text-primary">شركة Viva Water System</h2>
+                        <p class="text-[10px] text-slate-500 font-bold">فاتورة طلب أونلاين مبدئية</p>
+                    </div>
+                    <div class="text-left text-xs font-bold text-slate-600">
+                        <div id="inv-date">التاريخ: --/--/----</div>
+                        <div id="inv-num">رقم الطلب: #--</div>
+                    </div>
+                </div>
+                <div class="text-xs space-y-1 bg-slate-50 p-3 rounded-xl font-bold">
+                    <div><strong>العميل:</strong> <span id="inv-cust-name">---</span></div>
+                    <div><strong>العنوان:</strong> <span id="inv-cust-address">---</span></div>
+                </div>
+                <table class="w-full text-right text-xs border-collapse">
+                    <thead>
+                        <tr class="border-b bg-slate-100">
+                            <th class="p-2">المنتج</th>
+                            <th class="p-2">الكمية</th>
+                            <th class="p-2">السعر</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inv-items-table"></tbody>
+                </table>
+                <div class="flex justify-between font-extrabold text-sm border-t pt-2 text-slate-900">
+                    <span>الإجمالي النهائي:</span>
+                    <span id="inv-total-price" class="text-primary">0 ج.م</span>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="window.print()" class="flex-1 bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs"><i class="fa-solid fa-print ml-1"></i> طباعة الفاتورة</button>
+                <button onclick="closeInvoiceModal()" class="bg-slate-100 text-slate-600 font-bold px-4 py-2.5 rounded-xl text-xs">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold"><i class="fa-solid fa-shield-halved"></i></div>
+                <h3 class="font-extrabold text-base">تسجيل دخول الإدارة</h3>
+                <p class="text-xs text-slate-500">أدخل كلمة المرور (الافتراضية: admin123)</p>
+            </div>
+            <input type="password" id="login-pass" placeholder="كلمة المرور..." class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+            <div class="flex gap-2">
+                <button onclick="submitLogin()" class="flex-1 bg-primary text-white font-bold py-2.5 rounded-xl text-xs">دخول</button>
+                <button onclick="closeLoginModal()" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 dark:text-white w-full max-w-lg rounded-3xl p-6 shadow-2xl my-8">
+            <h3 id="modal-title" class="font-black text-base mb-4">إضافة منتج جديد</h3>
+            <form id="product-form" onsubmit="handleProductSubmit(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="p-id">
+                <div>
+                    <label class="block font-bold mb-1">اسم المنتج</label>
+                    <input type="text" id="p-name" required class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">السعر الحالي</label>
+                        <input type="number" id="p-price" required placeholder="2800" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">السعر القديم</label>
+                        <input type="number" id="p-old-price" placeholder="3500" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">التصنيف</label>
+                        <input type="text" id="p-cat" placeholder="فلاتر منزلية" required class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">بلد المنشأ</label>
+                        <input type="text" id="p-origin" placeholder="تايواني أصلي" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">فترة الضمان</label>
+                        <input type="text" id="p-warranty" placeholder="عامين صيانة مجانية" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">رابط صورة أو ارفع صورة صغيرة من الجهاز</label>
+                    <input type="text" id="p-img-url" placeholder="https://..." class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold mb-1">
+                    <input type="file" id="p-file" accept="image/*" class="w-full border dark:border-slate-700 rounded-xl p-2 bg-slate-50 dark:bg-slate-800">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">وصف المنتج والمميزات</label>
+                    <textarea id="p-desc" rows="3" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold"></textarea>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="p-featured" class="w-4 h-4 rounded">
+                    <label for="p-featured" class="font-bold">تمييز المنتج كـ "الأكثر مبيعاً / مميز"</label>
+                </div>
+                <div class="flex gap-2 pt-3">
+                    <button type="submit" class="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-sky-600 transition">حفظ البيانات</button>
+                    <button type="button" onclick="closeProductModal()" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-5 py-3 rounded-xl">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const initialDefaultData = {
+            name: "شركة Viva Water System",
+            desc: "أنظمة تنقية ومعالجة المياه والبيتومين",
+            phone: "201000000000",
+            pass: "admin123",
+            currency: "ج.م",
+            logo: "https://via.placeholder.com/100?text=Viva+Water",
+            banner: {
+                show: true,
+                title: "أفضل أنظمة الـ RO ومعالجة المياه في مصر",
+                sub: "عروض ممتازة على الصيانة الدورية وقطع الغيار الأصلية بنسبة 100%.",
+                img: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=800"
+            },
+            contact: {
+                address: "مصر - القاهرة",
+                hours: "يومياً من 9 ص لـ 10 م",
+                fb: "#"
+            },
+            reviews: [
+                { name: "م. أحمد حسام", text: "الفلتر الـ 7 مراحل ممتاز جداً ونقاء المياه مفيش بعد كده.", stars: 5 },
+                { name: "د. سارة محمود", text: "خدمة صيانة سريعة ومحترمة، شكراً لفريق Viva Water.", stars: 5 }
+            ],
+            products: [
+                { id: 1, name: "فلتر مياه 7 مراحل R.O", price: 2800, oldPrice: 3500, cat: "فلاتر منزلية", origin: "تايواني أصلي", warranty: "ضمان عامين كاملين", desc: "نظام نضح عكسي متكامل لتنقية الشوائب والمعادن الثقيلة", img: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500", featured: true }
+            ]
+        };
+
+        let storeData = JSON.parse(localStorage.getItem('viva_store_v6')) || initialDefaultData;
+        let cart = [];
+        let isAdmin = sessionStorage.getItem('viva_admin') === 'true';
+
+        window.onload = function() {
+            if(localStorage.getItem('viva_dark') === 'true') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('dark-icon').className = 'fa-solid fa-sun text-amber-400';
+            }
+            renderStore();
+            renderCategoryStories();
+            renderCategoriesButtons();
+            renderProducts();
+            renderReviews();
+            if(isAdmin) enableAdminUI();
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('viva_dark', isDark);
+            document.getElementById('dark-icon').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-base';
+        }
+
+        function renderStore() {
+            document.getElementById('store-name').innerText = storeData.name;
+            document.getElementById('store-desc').innerText = storeData.desc;
+            document.getElementById('footer-store-name').innerText = storeData.name;
+            document.getElementById('footer-store-desc').innerText = storeData.desc;
+            document.getElementById('footer-address').innerText = storeData.contact.address;
+            document.getElementById('footer-hours').innerText = storeData.contact.hours;
+            document.getElementById('footer-fb-link').href = storeData.contact.fb || '#';
+            document.getElementById('footer-wa-link').href = `https://wa.me/${storeData.phone}`;
+
+            if(storeData.logo) document.getElementById('store-logo').src = storeData.logo;
+
+            document.getElementById('setting-name').value = storeData.name;
+            document.getElementById('setting-desc').value = storeData.desc;
+            document.getElementById('setting-phone').value = storeData.phone;
+            document.getElementById('setting-currency').value = storeData.currency;
+            document.getElementById('contact-address').value = storeData.contact.address;
+            document.getElementById('contact-hours').value = storeData.contact.hours;
+            document.getElementById('contact-fb').value = storeData.contact.fb;
+
+            const hero = document.getElementById('hero-banner');
+            if(storeData.banner && storeData.banner.show) {
+                hero.classList.remove('hidden');
+                document.getElementById('banner-title-display').innerText = storeData.banner.title;
+                document.getElementById('banner-sub-display').innerText = storeData.banner.sub;
+                if(storeData.banner.img) document.getElementById('banner-bg-img').src = storeData.banner.img;
+            } else {
+                hero.classList.add('hidden');
+            }
+
+            document.getElementById('banner-title').value = storeData.banner.title;
+            document.getElementById('banner-sub').value = storeData.banner.sub;
+            document.getElementById('banner-show').checked = storeData.banner.show;
+        }
+
+        function renderCategoryStories() {
+            const cats = ['الكل', ...new Set(storeData.products.map(p => p.cat))];
+            const container = document.getElementById('category-stories');
+            container.innerHTML = cats.map(c => `
+                <button onclick="filterCat('${c}')" class="flex flex-col items-center gap-1.5 min-w-[65px]">
+                    <div class="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-sky-400 to-primary flex items-center justify-center shadow-sm">
+                        <div class="w-full h-full bg-white dark:bg-slate-900 rounded-full flex items-center justify-center text-primary font-black text-sm">
+                            <i class="fa-solid ${c==='الكل'?'fa-border-all':'fa-droplet'}"></i>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[70px]">${c}</span>
+                </button>
+            `).join('');
+        }
+
+        function renderCategoriesButtons() {
+            const cats = ['الكل', ...new Set(storeData.products.map(p => p.cat))];
+            const container = document.getElementById('category-filters');
+            container.innerHTML = cats.map(c => `
+                <button onclick="filterCat('${c}')" class="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full text-xs font-bold whitespace-nowrap hover:bg-primary hover:text-white transition">${c}</button>
+            `).join('');
+        }
+
+        function renderProducts(list = storeData.products) {
+            const container = document.getElementById('products-grid');
+            document.getElementById('products-count').innerText = `${list.length} منتج`;
+
+            if(list.length === 0) {
+                container.innerHTML = '<p class="col-span-full text-center text-slate-400 py-10 font-bold text-xs">لا توجد منتجات مطابقة حالياً</p>';
+                return;
+            }
+
+            container.innerHTML = list.map(p => {
+                const hasDiscount = p.oldPrice && p.oldPrice > p.price;
+                const discountPercent = hasDiscount ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) : 0;
+
+                return `
+                <div class="product-card bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between">
+                    <div class="relative cursor-pointer" onclick="openQuickView(${p.id})">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-44 object-cover">
+                        <div class="absolute top-2 right-2 flex flex-col gap-1">
+                            ${p.featured ? `<span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow"><i class="fa-solid fa-star"></i> مميز</span>` : ''}
+                            ${hasDiscount ? `<span class="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow">خصم ${discountPercent}%</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 px-2 py-0.5 rounded-md font-extrabold inline-block mb-1">${p.cat}</span>
+                            <h3 onclick="openQuickView(${p.id})" class="font-bold text-slate-800 dark:text-white text-sm cursor-pointer hover:text-primary transition">${p.name}</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">${p.desc || ''}</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <div>
+                                <span class="font-black text-primary text-sm">${p.price} ${storeData.currency}</span>
+                                ${hasDiscount ? `<span class="text-[10px] text-slate-400 line-through mr-1 font-bold">${p.oldPrice}${storeData.currency}</span>` : ''}
+                            </div>
+                            <div class="flex gap-1">
+                                ${isAdmin ? `
+                                    <button onclick="editProduct(${p.id})" class="p-2 text-amber-500 hover:bg-amber-50 rounded-lg text-xs"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteProduct(${p.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button>
+                                ` : ''}
+                                <button onclick="addToCart(${p.id})" class="bg-primary text-white text-xs px-3.5 py-2 rounded-xl font-bold hover:bg-sky-600 transition flex items-center gap-1">
+                                    <i class="fa-solid fa-plus"></i> إضافة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function openQuickView(id) {
+            const p = storeData.products.find(item => item.id === id);
+            if(!p) return;
+
+            const container = document.getElementById('qv-content');
+            container.innerHTML = `
+                <img src="${p.img}" class="w-full h-56 object-cover rounded-2xl">
+                <div>
+                    <span class="text-[10px] bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-bold px-2.5 py-1 rounded-md">${p.cat}</span>
+                    <h3 class="font-black text-lg mt-2">${p.name}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed font-bold">${p.desc || 'لا يوجد وصف إضافي'}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl font-bold">
+                    <div><strong>بلد المنشأ:</strong> ${p.origin || 'غير محدد'}</div>
+                    <div><strong>الضمان:</strong> ${p.warranty || 'ضمان قياسي'}</div>
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <span class="font-black text-primary text-lg">${p.price} ${storeData.currency}</span>
+                    <button onclick="addToCart(${p.id}); closeQuickView();" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-xs"><i class="fa-solid fa-cart-plus ml-1"></i> إضافة للسلة</button>
+                </div>
+            `;
+            document.getElementById('quickview-modal').classList.remove('hidden');
+        }
+
+        function closeQuickView() { document.getElementById('quickview-modal').classList.add('hidden'); }
+
+        function openWhatsAppDirect() {
+            window.open(`https://wa.me/${storeData.phone}?text=${encodeURIComponent('مرحباً، أود الاستفسار عن منتجات وخدمات شركة Viva Water System.')}`, '_blank');
+        }
+
+        function renderReviews() {
+            const container = document.getElementById('reviews-grid');
+            container.innerHTML = storeData.reviews.map(r => `
+                <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 space-y-1">
+                    <div class="flex text-amber-400 text-xs">${'★'.repeat(r.stars)}</div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 font-medium">"${r.text}"</p>
+                    <h5 class="text-[11px] font-black text-slate-800 dark:text-white pt-1">- ${r.name}</h5>
+                </div>
+            `).join('');
+
+            const adminList = document.getElementById('admin-reviews-list');
+            adminList.innerHTML = storeData.reviews.map((r, i) => `
+                <div class="bg-slate-800 p-2.5 rounded-xl flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-white">${r.name}</div>
+                        <div class="text-slate-400 text-[10px]">${r.text}</div>
+                    </div>
+                    <button onclick="deleteReview(${i})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            const p = storeData.products.find(item => item.id === id);
+            const item = cart.find(i => i.id === id);
+            if(item) item.qty++;
+            else cart.push({ ...p, qty: 1 });
+            updateCart();
+        }
+
+        function updateCart() {
+            document.getElementById('cart-count').innerText = cart.reduce((sum, i) => sum + i.qty, 0);
+            const container = document.getElementById('cart-items');
+            container.innerHTML = cart.map(i => `
+                <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <div>
+                        <h4 class="font-bold text-xs">${i.name}</h4>
+                        <span class="text-[11px] text-slate-500 font-bold">${i.price} ${storeData.currency} × ${i.qty}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="changeQty(${i.id}, 1)" class="w-6 h-6 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-lg text-xs font-bold">+</button>
+                        <button onclick="changeQty(${i.id}, -1)" class="w-6 h-6 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-lg text-xs font-bold">-</button>
+                    </div>
+                </div>
+            `).join('');
+            const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            document.getElementById('cart-total').innerText = `${total} ${storeData.currency}`;
+        }
+
+        function changeQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if(item) {
+                item.qty += delta;
+                if(item.qty <= 0) cart = cart.filter(i => i.id !== id);
+            }
+            updateCart();
+        }
+
+        function toggleCart() { document.getElementById('cart-modal').classList.toggle('hidden'); }
+
+        function sendOrder() {
+            if(cart.length === 0) return alert('سلة الطلبات فارغة حالياً!');
+            const name = document.getElementById('cust-name').value;
+            const address = document.getElementById('cust-address').value;
+            if(!name || !address) return alert('برجاء كتابة الاسم والعنوان للطلب');
+
+            document.getElementById('inv-company-name').innerText = storeData.name;
+            document.getElementById('inv-cust-name').innerText = name;
+            document.getElementById('inv-cust-address').innerText = address;
+            document.getElementById('inv-date').innerText = `التاريخ: ${new Date().toLocaleDateString('ar-EG')}`;
+            document.getElementById('inv-num').innerText = `رقم الطلب: #${Math.floor(1000 + Math.random() * 9000)}`;
+
+            const table = document.getElementById('inv-items-table');
+            table.innerHTML = cart.map(i => `
+                <tr class="border-b">
+                    <td class="p-2 font-bold">${i.name}</td>
+                    <td class="p-2">${i.qty}</td>
+                    <td class="p-2">${i.price * i.qty} ${storeData.currency}</td>
+                </tr>
+            `).join('');
+
+            const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            document.getElementById('inv-total-price').innerText = `${total} ${storeData.currency}`;
+
+            document.getElementById('invoice-modal').classList.remove('hidden');
+
+            let msg = `طلب جديد من موقع: ${storeData.name}\n`;
+            msg += `👤 العميل: ${name}\n📍 العنوان: ${address}\n\n📦 الطلبات:\n`;
+            cart.forEach(i => msg += `- ${i.name} (${i.qty}) بسعر ${i.price * i.qty} ${storeData.currency}\n`);
+            msg += `\n💰 الإجمالي: ${total} ${storeData.currency}`;
+
+            window.open(`https://wa.me/${storeData.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function closeInvoiceModal() { document.getElementById('invoice-modal').classList.add('hidden'); }
+
+        function exportBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(storeData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `viva_store_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importBackup(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if(importedData.name && importedData.products) {
+                        storeData = importedData;
+                        localStorage.setItem('viva_store_v6', JSON.stringify(storeData));
+                        renderStore();
+                        renderCategoryStories();
+                        renderCategoriesButtons();
+                        renderProducts();
+                        renderReviews();
+                        alert('تم استعادة النسخة الاحتياطية بنجاح!');
+                    } else {
+                        alert('الملف المختار غير صالح.');
+                    }
+                } catch(err) {
+                    alert('خطأ أثناء قراءة الملف.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetDefaultData() {
+            if(confirm('إعادة المتجر للإعدادات الافتراضية وفك تعليق الذاكرة؟')) {
+                localStorage.removeItem('viva_store_v6');
+                storeData = initialDefaultData;
+                renderStore();
+                renderCategoryStories();
+                renderCategoriesButtons();
+                renderProducts();
+                renderReviews();
+                alert('تمت إعادة الضبط بنجاح!');
+            }
+        }
+
+        function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
+
+        function submitLogin() {
+            const pass = document.getElementById('login-pass').value;
+            if(pass === storeData.pass) {
+                sessionStorage.setItem('viva_admin', 'true');
+                isAdmin = true;
+                enableAdminUI();
+                closeLoginModal();
+            } else alert('كلمة المرور غير صحيحة!');
+        }
+
+        function enableAdminUI() {
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('admin-badge').classList.remove('hidden');
+            renderProducts();
+            renderReviews();
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('viva_admin');
+            location.reload();
+        }
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-btn-"]').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tab}`).classList.add('tab-active');
+        }
+
+        function saveSettings() {
+            storeData.name = document.getElementById('setting-name').value;
+            storeData.desc = document.getElementById('setting-desc').value;
+            storeData.phone = document.getElementById('setting-phone').value;
+            storeData.currency = document.getElementById('setting-currency').value;
+            storeData.contact.address = document.getElementById('contact-address').value;
+            storeData.contact.hours = document.getElementById('contact-hours').value;
+            storeData.contact.fb = document.getElementById('contact-fb').value;
+
+            storeData.banner.title = document.getElementById('banner-title').value;
+            storeData.banner.sub = document.getElementById('banner-sub').value;
+            storeData.banner.show = document.getElementById('banner-show').checked;
+
+            const newPass = document.getElementById('setting-pass').value;
+            if(newPass) storeData.pass = newPass;
+
+            localStorage.setItem('viva_store_v6', JSON.stringify(storeData));
+            renderStore();
+            renderProducts();
+        }
+
+        function handleLogoUpload(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    storeData.logo = e.target.result;
+                    saveSettings();
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function handleBannerUpload(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    storeData.banner.img = e.target.result;
+                    saveSettings();
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openProductModal() {
+            document.getElementById('p-id').value = '';
+            document.getElementById('product-form').reset();
+            document.getElementById('modal-title').innerText = "إضافة منتج جديد";
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+        function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        function editProduct(id) {
+            const p = storeData.products.find(item => item.id === id);
+            if(!p) return;
+            document.getElementById('p-id').value = p.id;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-price').value = p.price;
+            document.getElementById('p-old-price').value = p.oldPrice || '';
+            document.getElementById('p-cat').value = p.cat;
+            document.getElementById('p-origin').value = p.origin || '';
+            document.getElementById('p-warranty').value = p.warranty || '';
+            document.getElementById('p-desc').value = p.desc || '';
+            document.getElementById('p-featured').checked = p.featured || false;
+            document.getElementById('modal-title').innerText = "تعديل بيانات المنتج";
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('p-id').value;
+            const fileInput = document.getElementById('p-file');
+            const imgUrlInput = document.getElementById('p-img-url').value;
+            const oldPriceVal = document.getElementById('p-old-price').value;
+
+            const save = (imgUrl) => {
+                const existingProduct = id ? storeData.products.find(p => p.id == id) : null;
+                const pData = {
+                    id: id ? parseInt(id) : Date.now(),
+                    name: document.getElementById('p-name').value,
+                    price: parseFloat(document.getElementById('p-price').value),
+                    oldPrice: oldPriceVal ? parseFloat(oldPriceVal) : null,
+                    cat: document.getElementById('p-cat').value,
+                    origin: document.getElementById('p-origin').value,
+                    warranty: document.getElementById('p-warranty').value,
+                    desc: document.getElementById('p-desc').value,
+                    featured: document.getElementById('p-featured').checked,
+                    img: imgUrl || (existingProduct ? existingProduct.img : "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500")
+                };
+
+                try {
+                    if(id) {
+                        const idx = storeData.products.findIndex(p => p.id == id);
+                        storeData.products[idx] = pData;
+                    } else {
+                        storeData.products.push(pData);
+                    }
+
+                    localStorage.setItem('viva_store_v6', JSON.stringify(storeData));
+                    renderCategoryStories();
+                    renderCategoriesButtons();
+                    renderProducts();
+                    closeProductModal();
+                    alert('تم حفظ المنتج بنجاح!');
+                } catch(err) {
+                    alert('عفواً! حجم الصورة كبير جداً، استخدم رابط صورة بدلاً من رفعه من الجهاز.');
+                }
+            };
+
+            if(imgUrlInput) {
+                save(imgUrlInput);
+            } else if(fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (event) => save(event.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                save();
+            }
+        }
+
+        function deleteProduct(id) {
+            if(confirm('حذف هذا المنتج؟')) {
+                storeData.products = storeData.products.filter(p => p.id !== id);
+                localStorage.setItem('viva_store_v6', JSON.stringify(storeData));
+                renderCategoryStories();
+                renderCategoriesButtons();
+                renderProducts();
+            }
+        }
+
+        function addReviewPrompt() {
+            const name = prompt('اسم العميل:');
+            const text = prompt('رأي العميل:');
+            if(name && text) {
+                storeData.reviews.push({ name, text, stars: 5 });
+                localStorage.setItem('viva_store_v6', JSON.stringify(storeData));
+                renderReviews();
+            }
+        }
+
+        function deleteReview(idx) {
+            storeData.reviews.splice(idx, 1);
+            localStorage.setItem('viva_store_v6', JSON.stringify(storeData));
+            renderReviews();
+        }
+
+        function filterCat(cat) {
+            if(cat === 'الكل') renderProducts();
+            else renderProducts(storeData.products.filter(p => p.cat === cat));
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            renderProducts(storeData.products.filter(p => p.name.toLowerCase().includes(query) || (p.desc && p.desc.toLowerCase().includes(query))));
+        }
+    </script>
+</body>
+</html>
