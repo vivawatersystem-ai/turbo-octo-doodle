@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">شركة Viva Water System | المتجر الإلكتروني الرسمى</title>
+    <title id="page-title">شركة Viva Water System | المتجر الإلكتروني الرسمي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -36,13 +36,14 @@
 
     <!-- Announcement Bar -->
     <div id="announcement-bar" class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-slate-200 text-xs py-2 px-4 text-center font-bold">
-        <span id="announcement-text">🌊 مرحباً بكم في شركة Viva Water System - أقوى عروض صيانة وفلاتر المياه بالضمان!</span>
+        <span id="announcement-text">🌊 مرحباً بكم في شركة Viva Water System - أفضل عروض الفلاتر وقطع الغيار الأصلية!</span>
     </div>
 
     <!-- Header -->
     <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm sticky top-0 z-40 transition-colors">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
+            <!-- Logo with Secret Triple Click Action -->
+            <div class="flex items-center gap-3 cursor-pointer select-none" onclick="handleSecretLogoClick()" title="Viva Water System">
                 <img id="store-logo" src="https://via.placeholder.com/100?text=Viva+Water" alt="Logo" class="w-11 h-11 object-contain rounded-2xl border dark:border-slate-800 p-1 bg-white shadow-sm">
                 <div>
                     <h1 id="store-name" class="font-black text-lg text-slate-900 dark:text-white leading-tight tracking-tight">شركة Viva Water System</h1>
@@ -55,10 +56,6 @@
                     <i id="dark-icon" class="fa-solid fa-moon text-base"></i>
                 </button>
 
-                <button id="admin-badge" onclick="openLoginModal()" class="hidden bg-amber-100 text-amber-800 text-xs px-3 py-2 rounded-full font-bold flex items-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-user-shield"></i> لوحة التحكم
-                </button>
-
                 <button onclick="toggleCart()" class="relative p-2.5 bg-sky-50 dark:bg-slate-800 text-primary dark:text-sky-400 rounded-2xl hover:bg-sky-100 dark:hover:bg-slate-700 transition">
                     <i class="fa-solid fa-cart-shopping text-base"></i>
                     <span id="cart-count" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">0</span>
@@ -67,13 +64,13 @@
         </div>
     </header>
 
-    <!-- Admin Panel (Dashboard) -->
+    <!-- Admin Panel (Hidden from Users) -->
     <div id="admin-panel" class="hidden max-w-6xl mx-auto px-4 mt-6 w-full">
         <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-2xl border border-slate-800">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-slate-800 gap-3">
                 <div>
-                    <h2 class="font-black text-xl flex items-center gap-2"><i class="fa-solid fa-sliders text-amber-400"></i> لوحة التحكم بالإدارة</h2>
-                    <p class="text-xs text-slate-400 mt-0.5">تعديل كامل المنتجات، الهوية، والنسخ الاحتياطي</p>
+                    <h2 class="font-black text-xl flex items-center gap-2"><i class="fa-solid fa-sliders text-amber-400"></i> لوحة الإدارة الخفية</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">تعديل كامل البيانات والمنتجات والنسخ الاحتياطي</p>
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <button onclick="openProductModal()" class="flex-1 sm:flex-initial bg-primary hover:bg-sky-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
@@ -289,11 +286,8 @@
                 </div>
             </div>
         </div>
-        <div class="max-w-6xl mx-auto px-4 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <div class="max-w-6xl mx-auto px-4 pt-4 text-center">
             <p>© جميع الحقوق محفوظة لـ Viva Water System</p>
-            <button onclick="openLoginModal()" class="text-slate-500 hover:text-slate-300 transition flex items-center gap-1.5 font-bold">
-                <i class="fa-solid fa-lock text-xs"></i> دخول لوحة الإدارة
-            </button>
         </div>
     </footer>
 
@@ -377,7 +371,7 @@
             <div class="text-center space-y-1">
                 <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold"><i class="fa-solid fa-shield-halved"></i></div>
                 <h3 class="font-extrabold text-base">تسجيل دخول الإدارة</h3>
-                <p class="text-xs text-slate-500">أدخل كلمة المرور (الافتراضية: admin123)</p>
+                <p class="text-xs text-slate-500">أدخل كلمة المرور المخصصة</p>
             </div>
             <input type="password" id="login-pass" placeholder="كلمة المرور..." class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary font-bold">
             <div class="flex gap-2">
@@ -474,6 +468,8 @@
         let storeData = JSON.parse(localStorage.getItem('viva_store_v6')) || initialDefaultData;
         let cart = [];
         let isAdmin = sessionStorage.getItem('viva_admin') === 'true';
+        let logoClickCount = 0;
+        let logoClickTimer = null;
 
         window.onload = function() {
             if(localStorage.getItem('viva_dark') === 'true') {
@@ -486,6 +482,18 @@
             renderProducts();
             renderReviews();
             if(isAdmin) enableAdminUI();
+        }
+
+        // Secret Triple Click Action to Open Login
+        function handleSecretLogoClick() {
+            logoClickCount++;
+            clearTimeout(logoClickTimer);
+            if(logoClickCount >= 3) {
+                logoClickCount = 0;
+                openLoginModal();
+            } else {
+                logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 1000);
+            }
         }
 
         function toggleDarkMode() {
@@ -791,7 +799,6 @@
 
         function enableAdminUI() {
             document.getElementById('admin-panel').classList.remove('hidden');
-            document.getElementById('admin-badge').classList.remove('hidden');
             renderProducts();
             renderReviews();
         }
