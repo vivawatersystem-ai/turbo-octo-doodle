@@ -423,9 +423,15 @@
                     <label class="block font-bold mb-1">وصف المنتج والمميزات</label>
                     <textarea id="p-desc" rows="3" class="w-full border dark:border-slate-700 bg-transparent rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-primary font-bold"></textarea>
                 </div>
-                <div class="flex items-center gap-2 pt-1">
-                    <input type="checkbox" id="p-featured" class="w-4 h-4 rounded">
-                    <label for="p-featured" class="font-bold">تمييز المنتج كـ "الأكثر مبيعاً / مميز"</label>
+                <div class="space-y-2 pt-1">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="p-featured" class="w-4 h-4 rounded">
+                        <label for="p-featured" class="font-bold">تمييز المنتج كـ "الأكثر مبيعاً / مميز"</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="p-out-of-stock" class="w-4 h-4 rounded text-red-600 focus:ring-red-500">
+                        <label for="p-out-of-stock" class="font-bold text-red-500">تعليم المنتج كـ "غير متوفر حالياً (نفدت الكمية)"</label>
+                    </div>
                 </div>
                 <div class="flex gap-2 pt-3">
                     <button type="submit" class="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-sky-600 transition">حفظ البيانات</button>
@@ -460,7 +466,7 @@
                 { name: "د. سارة محمود", text: "خدمة صيانة سريعة ومحترمة، شكراً لفريق Viva Water.", stars: 5 }
             ],
             products: [
-                { id: 1, name: "فلتر مياه 7 مراحل R.O", price: 2800, oldPrice: 3500, cat: "فلاتر منزلية", origin: "تايواني أصلي", warranty: "ضمان عامين كاملين", desc: "نظام نضح عكسي متكامل لتنقية الشوائب والمعادن الثقيلة", img: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500", featured: true }
+                { id: 1, name: "فلتر مياه 7 مراحل R.O", price: 2800, oldPrice: 3500, cat: "فلاتر منزلية", origin: "تايواني أصلي", warranty: "ضمان عامين كاملين", desc: "نظام نضح عكسي متكامل لتنقية الشوائب والمعادن الثقيلة", img: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500", featured: true, outOfStock: false }
             ]
         };
 
@@ -572,12 +578,13 @@
                 const discountPercent = hasDiscount ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) : 0;
 
                 return `
-                <div class="product-card bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between">
+                <div class="product-card bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between ${p.outOfStock ? 'opacity-75' : ''}">
                     <div class="relative cursor-pointer bg-white p-2 flex items-center justify-center h-48 border-b dark:border-slate-800" onclick="openQuickView(${p.id})">
-                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-contain">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-contain ${p.outOfStock ? 'grayscale' : ''}">
                         <div class="absolute top-2 right-2 flex flex-col gap-1 z-10">
-                            ${p.featured ? `<span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow"><i class="fa-solid fa-star"></i> مميز</span>` : ''}
-                            ${hasDiscount ? `<span class="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow">خصم ${discountPercent}%</span>` : ''}
+                            ${p.outOfStock ? `<span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow"><i class="fa-solid fa-circle-xmark"></i> نفدت الكمية</span>` : ''}
+                            ${p.featured && !p.outOfStock ? `<span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow"><i class="fa-solid fa-star"></i> مميز</span>` : ''}
+                            ${hasDiscount && !p.outOfStock ? `<span class="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow">خصم ${discountPercent}%</span>` : ''}
                         </div>
                     </div>
                     <div class="p-4 flex-grow flex flex-col justify-between">
@@ -593,12 +600,18 @@
                             </div>
                             <div class="flex gap-1">
                                 ${isAdmin ? `
-                                    <button onclick="editProduct(${p.id})" class="p-2 text-amber-500 hover:bg-amber-50 rounded-lg text-xs"><i class="fa-solid fa-pen"></i></button>
-                                    <button onclick="deleteProduct(${p.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button>
+                                    <button onclick="editProduct(${p.id})" class="p-2 text-amber-500 hover:bg-amber-50 rounded-lg text-xs" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteProduct(${p.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg text-xs" title="حذف"><i class="fa-solid fa-trash"></i></button>
                                 ` : ''}
-                                <button onclick="addToCart(${p.id})" class="bg-primary text-white text-xs px-3.5 py-2 rounded-xl font-bold hover:bg-sky-600 transition flex items-center gap-1">
-                                    <i class="fa-solid fa-plus"></i> إضافة
-                                </button>
+                                ${p.outOfStock ? `
+                                    <button disabled class="bg-slate-200 dark:bg-slate-800 text-slate-400 text-[11px] px-3 py-2 rounded-xl font-bold cursor-not-allowed">
+                                        غير متوفر
+                                    </button>
+                                ` : `
+                                    <button onclick="addToCart(${p.id})" class="bg-primary text-white text-xs px-3.5 py-2 rounded-xl font-bold hover:bg-sky-600 transition flex items-center gap-1">
+                                        <i class="fa-solid fa-plus"></i> إضافة
+                                    </button>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -612,8 +625,9 @@
 
             const container = document.getElementById('qv-content');
             container.innerHTML = `
-                <div class="bg-white p-2 rounded-2xl flex items-center justify-center h-60">
-                    <img src="${p.img}" class="w-full h-full object-contain">
+                <div class="bg-white p-2 rounded-2xl flex items-center justify-center h-60 relative">
+                    <img src="${p.img}" class="w-full h-full object-contain ${p.outOfStock ? 'grayscale' : ''}">
+                    ${p.outOfStock ? `<span class="absolute top-3 right-3 bg-red-600 text-white text-xs font-black px-3 py-1 rounded-lg shadow">غير متوفر حالياً</span>` : ''}
                 </div>
                 <div>
                     <span class="text-[10px] bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-bold px-2.5 py-1 rounded-md">${p.cat}</span>
@@ -626,7 +640,11 @@
                 </div>
                 <div class="flex justify-between items-center pt-2">
                     <span class="font-black text-primary text-lg">${p.price} ${storeData.currency}</span>
-                    <button onclick="addToCart(${p.id}); closeQuickView();" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-xs"><i class="fa-solid fa-cart-plus ml-1"></i> إضافة للسلة</button>
+                    ${p.outOfStock ? `
+                        <button disabled class="bg-slate-300 text-slate-500 px-5 py-2.5 rounded-xl font-bold text-xs cursor-not-allowed">غير متوفر حالياً</button>
+                    ` : `
+                        <button onclick="addToCart(${p.id}); closeQuickView();" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-xs"><i class="fa-solid fa-cart-plus ml-1"></i> إضافة للسلة</button>
+                    `}
                 </div>
             `;
             document.getElementById('quickview-modal').classList.remove('hidden');
@@ -662,6 +680,7 @@
 
         function addToCart(id) {
             const p = storeData.products.find(item => item.id === id);
+            if(p && p.outOfStock) return alert('عذراً، هذا المنتج غير متوفر حالياً.');
             const item = cart.find(i => i.id === id);
             if(item) item.qty++;
             else cart.push({ ...p, qty: 1 });
@@ -878,6 +897,7 @@
             document.getElementById('p-warranty').value = p.warranty || '';
             document.getElementById('p-desc').value = p.desc || '';
             document.getElementById('p-featured').checked = p.featured || false;
+            document.getElementById('p-out-of-stock').checked = p.outOfStock || false;
             document.getElementById('modal-title').innerText = "تعديل بيانات المنتج";
             document.getElementById('product-modal').classList.remove('hidden');
         }
@@ -901,6 +921,7 @@
                     warranty: document.getElementById('p-warranty').value,
                     desc: document.getElementById('p-desc').value,
                     featured: document.getElementById('p-featured').checked,
+                    outOfStock: document.getElementById('p-out-of-stock').checked,
                     img: imgUrl || (existingProduct ? existingProduct.img : "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500")
                 };
 
