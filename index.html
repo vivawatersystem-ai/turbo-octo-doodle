@@ -42,7 +42,6 @@
     <!-- Header -->
     <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm sticky top-0 z-40 transition-colors">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <!-- Logo with Secret Triple Click Action -->
             <div class="flex items-center gap-3 cursor-pointer select-none" onclick="handleSecretLogoClick()" title="Viva Water System">
                 <img id="store-logo" src="https://via.placeholder.com/100?text=Viva+Water" alt="Logo" class="w-11 h-11 object-contain rounded-2xl border dark:border-slate-800 p-1 bg-white shadow-sm">
                 <div>
@@ -64,7 +63,7 @@
         </div>
     </header>
 
-    <!-- Admin Panel (Hidden from Users) -->
+    <!-- Admin Panel -->
     <div id="admin-panel" class="hidden max-w-6xl mx-auto px-4 mt-6 w-full">
         <div class="bg-slate-900 text-white p-5 rounded-3xl shadow-2xl border border-slate-800">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-slate-800 gap-3">
@@ -484,7 +483,6 @@
             if(isAdmin) enableAdminUI();
         }
 
-        // Secret Triple Click Action to Open Login
         function handleSecretLogoClick() {
             logoClickCount++;
             clearTimeout(logoClickTimer);
@@ -575,9 +573,9 @@
 
                 return `
                 <div class="product-card bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between">
-                    <div class="relative cursor-pointer" onclick="openQuickView(${p.id})">
-                        <img src="${p.img}" alt="${p.name}" class="w-full h-44 object-cover">
-                        <div class="absolute top-2 right-2 flex flex-col gap-1">
+                    <div class="relative cursor-pointer bg-white p-2 flex items-center justify-center h-48 border-b dark:border-slate-800" onclick="openQuickView(${p.id})">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-contain">
+                        <div class="absolute top-2 right-2 flex flex-col gap-1 z-10">
                             ${p.featured ? `<span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow"><i class="fa-solid fa-star"></i> مميز</span>` : ''}
                             ${hasDiscount ? `<span class="bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md shadow">خصم ${discountPercent}%</span>` : ''}
                         </div>
@@ -614,7 +612,9 @@
 
             const container = document.getElementById('qv-content');
             container.innerHTML = `
-                <img src="${p.img}" class="w-full h-56 object-cover rounded-2xl">
+                <div class="bg-white p-2 rounded-2xl flex items-center justify-center h-60">
+                    <img src="${p.img}" class="w-full h-full object-contain">
+                </div>
                 <div>
                     <span class="text-[10px] bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-bold px-2.5 py-1 rounded-md">${p.cat}</span>
                     <h3 class="font-black text-lg mt-2">${p.name}</h3>
